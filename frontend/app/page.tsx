@@ -103,7 +103,7 @@ function MapNode({
         <div className="flex gap-0.5 mt-1.5">{[0,1,2].map(i => <span key={i} className="text-yellow-400 text-xs">★</span>)}</div>
       )}
       {status === "active" && (
-        <div className="mt-1.5 bg-yellow-400 text-yellow-900 text-[10px] font-black px-2.5 py-0.5 rounded-full">START</div>
+        <div className="mt-1.5 bg-yellow-400 text-yellow-900 text-[10px] font-black px-2.5 py-0.5 rounded-full">СТАРТ</div>
       )}
     </div>
   );
@@ -116,24 +116,24 @@ function MobileMap() {
     | { type: "chest";  locked?: boolean };
 
   const items: MapItem[] = [
-    { type: "banner", label: "Section 1 · Unit 1", title: "Form basic sentences", color: "bg-green-700/90", icon: "📝" },
-    { type: "node", status: "done",   icon: "📝", label: "Basic greetings",       col: 2 },
-    { type: "node", status: "done",   icon: "👋", label: "Say hello & goodbye",   col: 3 },
-    { type: "node", status: "active", icon: "🗣️", label: "Introduce yourself",    col: 2 },
-    { type: "node", status: "locked", icon: "❓", label: "Ask questions",          col: 1 },
-    { type: "node", status: "locked", icon: "💬", label: "Answer about yourself",  col: 0 },
+    { type: "banner", label: "Розділ 1 · Юніт 1", title: "Складай базові речення", color: "bg-green-700/90", icon: "📝" },
+    { type: "node", status: "done",   icon: "📝", label: "Базові привітання",       col: 2 },
+    { type: "node", status: "done",   icon: "👋", label: "Привітання та прощання",   col: 3 },
+    { type: "node", status: "active", icon: "🗣️", label: "Познайомся",    col: 2 },
+    { type: "node", status: "locked", icon: "❓", label: "Задавай питання",          col: 1 },
+    { type: "node", status: "locked", icon: "💬", label: "Розповідай про себе",  col: 0 },
     { type: "chest", locked: false },
-    { type: "banner", label: "Section 1 · Unit 2", title: "Numbers & time", color: "bg-blue-700/90", icon: "🔢" },
-    { type: "node", status: "locked", icon: "🔢", label: "Numbers 1–10",     col: 2 },
-    { type: "node", status: "locked", icon: "⏰", label: "Tell the time",     col: 3 },
-    { type: "node", status: "locked", icon: "📅", label: "Dates & calendar",  col: 2 },
-    { type: "node", status: "locked", icon: "🧮", label: "Count objects",     col: 1 },
+    { type: "banner", label: "Розділ 1 · Юніт 2", title: "Числа та час", color: "bg-blue-700/90", icon: "🔢" },
+    { type: "node", status: "locked", icon: "🔢", label: "Числа 1–10",     col: 2 },
+    { type: "node", status: "locked", icon: "⏰", label: "Говори про час",     col: 3 },
+    { type: "node", status: "locked", icon: "📅", label: "Дати та календар",  col: 2 },
+    { type: "node", status: "locked", icon: "🧮", label: "Рахуй предмети",     col: 1 },
     { type: "chest", locked: true },
-    { type: "banner", label: "Section 2 · Unit 1", title: "Food & daily life", color: "bg-rose-700/90", icon: "🍎" },
-    { type: "node", status: "locked", icon: "🍎", label: "Food & drinks",           col: 2 },
-    { type: "node", status: "locked", icon: "🍽️", label: "Order at restaurant",     col: 3 },
-    { type: "node", status: "locked", icon: "🛒", label: "Shopping vocabulary",     col: 2 },
-    { type: "node", status: "locked", icon: "💳", label: "Paying & prices",         col: 1 },
+    { type: "banner", label: "Розділ 2 · Юніт 1", title: "Їжа та побут", color: "bg-rose-700/90", icon: "🍎" },
+    { type: "node", status: "locked", icon: "🍎", label: "Їжа та напої",           col: 2 },
+    { type: "node", status: "locked", icon: "🍽️", label: "Замовляй в ресторані",     col: 3 },
+    { type: "node", status: "locked", icon: "🛒", label: "Словник покупок",     col: 2 },
+    { type: "node", status: "locked", icon: "💳", label: "Оплата та ціни",         col: 1 },
     { type: "chest", locked: true },
   ];
 
@@ -292,11 +292,11 @@ function UnitCard({ unit, section, icon, color, border, glow, progress, lessons 
           <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-2xl">{icon}</div>
           <div>
             <div className="text-white/70 text-[10px] font-bold uppercase tracking-widest">{section}</div>
-            <div className="text-white font-black text-base">Unit {unit}</div>
+            <div className="text-white font-black text-base">Юніт {unit}</div>
           </div>
         </div>
         <div className="text-right">
-          <div className="text-white/60 text-xs mb-1">{progress}% complete</div>
+          <div className="text-white/60 text-xs mb-1">{progress}% виконано</div>
           <div className="w-24 h-1.5 bg-white/20 rounded-full overflow-hidden">
             <div className="h-full bg-white/70 rounded-full" style={{ width: `${progress}%` }} />
           </div>
@@ -336,7 +336,7 @@ function UnitCard({ unit, section, icon, color, border, glow, progress, lessons 
       {nextLesson && (
         <div className="px-4 pb-4">
           <button className="w-full bg-green-500 hover:bg-green-400 active:scale-[0.98] text-white font-black py-3 rounded-2xl transition-all shadow-[0_0_20px_rgba(34,197,94,0.3)] text-sm">
-            Continue: {nextLesson.title} ▶
+            Продовжити: {nextLesson.title} ▶
           </button>
         </div>
       )}
@@ -377,37 +377,37 @@ export default function Home() {
 
   const units = [
     {
-      unit: 1, section: "Section 1", icon: "📝", progress: 40,
+      unit: 1, section: "Розділ 1", icon: "📝", progress: 40,
       color: "bg-gradient-to-r from-green-700/80 to-emerald-700/80",
       border: "border-green-500/25", glow: "shadow-[0_4px_24px_rgba(34,197,94,0.2)]",
       lessons: [
-        { title: "Basic greetings",      type: "Vocabulary",   done: true  },
-        { title: "Say hello & goodbye",  type: "Speaking",     done: true  },
-        { title: "Introduce yourself",   type: "Conversation", active: true },
-        { title: "Ask simple questions", type: "Grammar",      locked: true },
-        { title: "Answer about yourself",type: "Listening",    locked: true },
+        { title: "Базові привітання",      type: "Словник",   done: true  },
+        { title: "Привітання та прощання",  type: "Мовлення",     done: true  },
+        { title: "Познайомся",   type: "Розмова", active: true },
+        { title: "Задавай прості питання", type: "Граматика",      locked: true },
+        { title: "Розповідай про себе",type: "Аудіювання",    locked: true },
       ],
     },
     {
-      unit: 2, section: "Section 1", icon: "🔢", progress: 0,
+      unit: 2, section: "Розділ 1", icon: "🔢", progress: 0,
       color: "bg-gradient-to-r from-blue-700/80 to-indigo-700/80",
       border: "border-blue-500/20", glow: "shadow-[0_4px_24px_rgba(59,130,246,0.15)]",
       lessons: [
-        { title: "Numbers 1–10",  type: "Vocabulary", locked: true },
-        { title: "Tell the time", type: "Conversation", locked: true },
-        { title: "Dates & calendar", type: "Grammar", locked: true },
-        { title: "Count objects", type: "Practice",   locked: true },
+        { title: "Числа 1–10",  type: "Словник", locked: true },
+        { title: "Говори про час", type: "Розмова", locked: true },
+        { title: "Дати та календар", type: "Граматика", locked: true },
+        { title: "Рахуй предмети", type: "Практика",   locked: true },
       ],
     },
     {
-      unit: 3, section: "Section 2", icon: "🍎", progress: 0,
+      unit: 3, section: "Розділ 2", icon: "🍎", progress: 0,
       color: "bg-gradient-to-r from-rose-700/80 to-pink-700/80",
       border: "border-rose-500/20", glow: "shadow-[0_4px_24px_rgba(244,63,94,0.15)]",
       lessons: [
-        { title: "Food & drinks",       type: "Vocabulary",   locked: true },
-        { title: "Order at restaurant", type: "Conversation", locked: true },
-        { title: "Express preferences", type: "Speaking",     locked: true },
-        { title: "Shopping vocab",      type: "Vocabulary",   locked: true },
+        { title: "Їжа та напої",       type: "Словник",   locked: true },
+        { title: "Замовляй в ресторані", type: "Розмова", locked: true },
+        { title: "Висловлюй вподобання", type: "Мовлення",     locked: true },
+        { title: "Покупки",      type: "Словник",   locked: true },
       ],
     },
   ];
@@ -422,10 +422,10 @@ export default function Home() {
   ];
 
   const navItems: { id: Tab; icon: string; label: string }[] = [
-    { id: "learn",       icon: "🏠", label: "Learn"    },
-    { id: "practice",    icon: "⚔️", label: "Practice" },
-    { id: "leaderboard", icon: "🏆", label: "Ranks"    },
-    { id: "profile",     icon: "👤", label: "Profile"  },
+    { id: "learn",       icon: "🏠", label: "Вчити"    },
+    { id: "practice",    icon: "⚔️", label: "Практика" },
+    { id: "leaderboard", icon: "🏆", label: "Рейтинг"    },
+    { id: "profile",     icon: "👤", label: "Профіль"  },
   ];
 
   if (!mounted) return null;
@@ -473,7 +473,7 @@ export default function Home() {
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-xs font-black">A</div>
               <div className="flex-1 min-w-0">
                 <div className="text-white text-xs font-bold truncate">Andriy</div>
-                <div className="text-white/30 text-[10px]">Level {level} · {totalXp} XP</div>
+                <div className="text-white/30 text-[10px]">Рівень {level} · {totalXp} XP</div>
               </div>
               <div className="text-orange-400 text-xs font-black">{streak}🔥</div>
             </div>
@@ -516,14 +516,14 @@ export default function Home() {
                     {/* Hero */}
                     <div className="bg-gradient-to-r from-green-600/40 to-emerald-600/30 border border-green-500/25 rounded-3xl p-6 flex items-center justify-between gap-4">
                       <div>
-                        <div className="text-white/60 text-sm">Good day, Andriy 👋</div>
-                        <div className="text-white text-2xl font-black mt-0.5">Keep your streak alive!</div>
+                        <div className="text-white/60 text-sm">Привіт, Андрій 👋</div>
+                        <div className="text-white text-2xl font-black mt-0.5">Тримай серію!</div>
                         <div className="text-white/40 text-sm mt-1">
-                          <span className="text-yellow-400 font-bold">{dailyGoal - dailyXp} XP</span> left for today&apos;s goal
+                          <span className="text-yellow-400 font-bold">{dailyGoal - dailyXp} XP</span> до денної цілі
                         </div>
                       </div>
                       <button className="flex-shrink-0 bg-green-500 hover:bg-green-400 active:scale-95 text-white font-black px-7 py-3.5 rounded-2xl shadow-[0_0_24px_rgba(34,197,94,0.4)] transition-all">
-                        Continue ▶
+                        Продовжити ▶
                       </button>
                     </div>
 
@@ -534,7 +534,7 @@ export default function Home() {
                   <div className="space-y-4">
                     {/* Daily goal */}
                     <div className="bg-white/5 border border-white/10 rounded-3xl p-5">
-                      <div className="text-white/50 text-[10px] font-bold uppercase tracking-widest mb-3">Daily Goal</div>
+                      <div className="text-white/50 text-[10px] font-bold uppercase tracking-widest mb-3">Денна ціль</div>
                       <div className="flex items-center gap-4">
                         <div className="relative">
                           <ProgressRing pct={dailyXp / dailyGoal} size={72} stroke={7} color="#a855f7" />
@@ -544,35 +544,35 @@ export default function Home() {
                         </div>
                         <div>
                           <div className="text-white text-2xl font-black">{dailyXp} <span className="text-white/30 text-base font-medium">/ {dailyGoal}</span></div>
-                          <div className="text-white/40 text-xs">XP today</div>
-                          <div className="text-white/30 text-xs mt-0.5">{dailyGoal - dailyXp} XP to go</div>
+                          <div className="text-white/40 text-xs">XP сьогодні</div>
+                          <div className="text-white/30 text-xs mt-0.5">{dailyGoal - dailyXp} XP залишилось</div>
                         </div>
                       </div>
                     </div>
 
                     {/* Stats */}
                     <div className="grid grid-cols-2 gap-3">
-                      <StatWidget icon="🔥" value={streak}   label="Day streak"  sub="Personal best: 14" color="bg-orange-500/20" />
-                      <StatWidget icon="⭐" value={totalXp}  label="Total XP"    sub={`Lvl ${level} → ${level+1}`} color="bg-yellow-500/20" />
-                      <StatWidget icon="📚" value={12}        label="Lessons done" sub="This week: 5" color="bg-green-500/20" />
-                      <StatWidget icon="🏆" value="#4"        label="Leaderboard" sub="Top 10%"      color="bg-purple-500/20" />
+                      <StatWidget icon="🔥" value={streak}   label="Серія днів"  sub="Рекорд: 14" color="bg-orange-500/20" />
+                      <StatWidget icon="⭐" value={totalXp}  label="Всього XP"    sub={`Lvl ${level} → ${level+1}`} color="bg-yellow-500/20" />
+                      <StatWidget icon="📚" value={12}        label="Уроків пройдено" sub="Цього тижня: 5" color="bg-green-500/20" />
+                      <StatWidget icon="🏆" value="#4"        label="Рейтинг" sub="Топ 10%"      color="bg-purple-500/20" />
                     </div>
 
                     {/* Level */}
                     <div className="bg-white/5 border border-white/10 rounded-3xl p-5">
                       <div className="flex items-center justify-between mb-2">
-                        <div className="text-white font-black">Level {level} ⭐</div>
+                        <div className="text-white font-black">Рівень {level} ⭐</div>
                         <div className="text-white/30 text-xs">{totalXp}/{nextLvlXp} XP</div>
                       </div>
                       <XpBar current={totalXp} max={nextLvlXp} />
-                      <div className="text-white/30 text-xs mt-1.5">{nextLvlXp - totalXp} XP to Level {level+1}</div>
+                      <div className="text-white/30 text-xs mt-1.5">{nextLvlXp - totalXp} XP до Рівня {level+1}</div>
                     </div>
 
                     {/* Leaderboard mini */}
                     <div className="bg-white/5 border border-white/10 rounded-3xl p-5">
                       <div className="flex items-center justify-between mb-3">
-                        <div className="text-white font-bold text-sm">Leaderboard</div>
-                        <button onClick={() => setTab("leaderboard")} className="text-purple-400 text-xs hover:text-purple-300">See all →</button>
+                        <div className="text-white font-bold text-sm">Рейтинг</div>
+                        <button onClick={() => setTab("leaderboard")} className="text-purple-400 text-xs hover:text-purple-300">Всі →</button>
                       </div>
                       <div className="space-y-1">
                         {leaderboard.slice(0, 5).map((r, i) => (
@@ -582,7 +582,7 @@ export default function Home() {
                             </div>
                             <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-[10px] font-black">{r.name[0]}</div>
                             <div className="flex-1 text-xs font-semibold truncate">
-                              {r.name} {r.isYou && <span className="text-purple-400">(you)</span>}
+                              {r.name} {r.isYou && <span className="text-purple-400">(ти)</span>}
                             </div>
                             <div className="text-white/30 text-[10px]">{r.xp.toLocaleString()}</div>
                           </div>
@@ -592,8 +592,8 @@ export default function Home() {
 
                     {/* Tip */}
                     <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-4">
-                      <div className="text-indigo-300 text-[10px] font-bold uppercase tracking-widest mb-1">💡 Tip</div>
-                      <div className="text-white/60 text-xs leading-relaxed">10 min daily beats 2 hours once a week. Consistency is everything!</div>
+                      <div className="text-indigo-300 text-[10px] font-bold uppercase tracking-widest mb-1">💡 Порада дня</div>
+                      <div className="text-white/60 text-xs leading-relaxed">10 хвилин щодня краще ніж 2 години раз на тиждень. Регулярність — все!</div>
                     </div>
                   </div>
                 </div>
@@ -603,17 +603,17 @@ export default function Home() {
               {tab === "practice" && (
                 <div className="max-w-3xl">
                   <div className="mb-6">
-                    <div className="text-2xl font-black">Practice Mode ⚔️</div>
-                    <div className="text-white/40 mt-1">Sharpen your skills anytime</div>
+                    <div className="text-2xl font-black">Режим практики ⚔️</div>
+                    <div className="text-white/40 mt-1">Вдосконалюй навички будь-коли</div>
                   </div>
                   <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
                     {[
-                      { icon: "🗣️", title: "Speaking",    desc: "AI pronunciation feedback",   color: "from-violet-600/30 to-violet-800/20", border: "border-violet-500/20", xp: 15 },
-                      { icon: "👂", title: "Listening",   desc: "Train with native audio",      color: "from-blue-600/30 to-blue-800/20",   border: "border-blue-500/20",   xp: 10 },
-                      { icon: "✍️", title: "Writing",     desc: "Build sentences from memory",  color: "from-emerald-600/30 to-emerald-800/20", border: "border-emerald-500/20", xp: 12 },
-                      { icon: "🃏", title: "Flashcards",  desc: "Spaced repetition vocab",      color: "from-rose-600/30 to-rose-800/20",   border: "border-rose-500/20",   xp:  8 },
-                      { icon: "⚡", title: "Speed Round", desc: "20 questions, 60 seconds",     color: "from-yellow-600/30 to-yellow-800/20", border: "border-yellow-500/20", xp: 20 },
-                      { icon: "🤖", title: "AI Chat",     desc: "Chat with AI partner",         color: "from-cyan-600/30 to-cyan-800/20",   border: "border-cyan-500/20",   xp: 25 },
+                      { icon: "🗣️", title: "Мовлення",    desc: "ІІ зворотній зв'язок",   color: "from-violet-600/30 to-violet-800/20", border: "border-violet-500/20", xp: 15 },
+                      { icon: "👂", title: "Аудіювання",   desc: "Тренуйся з носіями",      color: "from-blue-600/30 to-blue-800/20",   border: "border-blue-500/20",   xp: 10 },
+                      { icon: "✍️", title: "Письмо",     desc: "Будуй речення з пам'яті",  color: "from-emerald-600/30 to-emerald-800/20", border: "border-emerald-500/20", xp: 12 },
+                      { icon: "🃏", title: "Флеш-картки",  desc: "Інтервальне повторення",      color: "from-rose-600/30 to-rose-800/20",   border: "border-rose-500/20",   xp:  8 },
+                      { icon: "⚡", title: "Швидкий раунд", desc: "20 питань за 60 секунд",     color: "from-yellow-600/30 to-yellow-800/20", border: "border-yellow-500/20", xp: 20 },
+                      { icon: "🤖", title: "ІІ Чат",     desc: "Чат з ІІ партнером",         color: "from-cyan-600/30 to-cyan-800/20",   border: "border-cyan-500/20",   xp: 25 },
                     ].map((m, i) => (
                       <button key={i} className={`flex flex-col gap-4 p-5 rounded-2xl bg-gradient-to-br ${m.color} border ${m.border} hover:brightness-110 active:scale-[0.98] transition-all text-left`}>
                         <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-2xl">{m.icon}</div>
@@ -634,8 +634,8 @@ export default function Home() {
               {tab === "leaderboard" && (
                 <div className="max-w-2xl">
                   <div className="mb-6">
-                    <div className="text-2xl font-black">Weekly Rankings 🏆</div>
-                    <div className="text-white/40 mt-1">Resets Monday · Top 3 get bonus 💎</div>
+                    <div className="text-2xl font-black">Тижневий рейтинг 🏆</div>
+                    <div className="text-white/40 mt-1">Скидається в понеділок · Топ-3 отримують бонус 💎</div>
                   </div>
                   {/* Podium */}
                   <div className="flex items-end justify-center gap-4 mb-6">
@@ -661,9 +661,9 @@ export default function Home() {
                         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center font-bold">{r.name[0]}</div>
                         <div className="flex-1">
                           <div className={`font-semibold text-sm ${r.isYou ? "text-purple-300" : "text-white"}`}>
-                            {r.name} {r.isYou && <span className="text-xs bg-purple-500/30 text-purple-300 px-1.5 py-0.5 rounded-full ml-1">You</span>}
+                            {r.name} {r.isYou && <span className="text-xs bg-purple-500/30 text-purple-300 px-1.5 py-0.5 rounded-full ml-1">ти</span>}
                           </div>
-                          <div className="text-white/30 text-xs">{r.xp.toLocaleString()} XP this week</div>
+                          <div className="text-white/30 text-xs">{r.xp.toLocaleString()} XP цього тижня</div>
                         </div>
                         <div className="w-28 hidden sm:block">
                           <XpBar current={r.xp} max={5000} />
@@ -681,19 +681,19 @@ export default function Home() {
                     <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-3xl font-black flex-shrink-0 shadow-[0_0_30px_rgba(139,92,246,0.5)]">A</div>
                     <div>
                       <div className="text-white text-2xl font-black">Andriy</div>
-                      <div className="text-white/40 text-sm">Joined March 2026</div>
+                      <div className="text-white/40 text-sm">Приєднався у березні 2026</div>
                       <div className="flex items-center gap-2 mt-2">
-                        <span className="bg-purple-500/30 text-purple-300 text-xs font-bold px-3 py-1 rounded-full">🇺🇦 Ukrainian</span>
-                        <span className="bg-blue-500/30 text-blue-300 text-xs font-bold px-3 py-1 rounded-full">🇬🇧 English</span>
+                        <span className="bg-purple-500/30 text-purple-300 text-xs font-bold px-3 py-1 rounded-full">🇺🇦 Українська</span>
+                        <span className="bg-blue-500/30 text-blue-300 text-xs font-bold px-3 py-1 rounded-full">🇬🇧 Англійська</span>
                       </div>
                     </div>
                   </div>
                   <div className="grid grid-cols-4 gap-3">
                     {[
-                      { icon:"🔥", val: streak,  label:"Streak",  color:"text-orange-400" },
-                      { icon:"⭐", val: totalXp, label:"Total XP", color:"text-yellow-400" },
-                      { icon:"📚", val: 12,       label:"Lessons", color:"text-green-400"  },
-                      { icon:"🏆", val: "#4",     label:"Rank",    color:"text-purple-400" },
+                      { icon:"🔥", val: streak,  label:"Серія",  color:"text-orange-400" },
+                      { icon:"⭐", val: totalXp, label:"Всього XP", color:"text-yellow-400" },
+                      { icon:"📚", val: 12,       label:"Уроки", color:"text-green-400"  },
+                      { icon:"🏆", val: "#4",     label:"Місце",    color:"text-purple-400" },
                     ].map((s,i) => (
                       <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col items-center gap-1">
                         <span className="text-2xl">{s.icon}</span>
@@ -704,22 +704,22 @@ export default function Home() {
                   </div>
                   <div className="bg-white/5 border border-white/10 rounded-3xl p-5">
                     <div className="flex items-center justify-between mb-2">
-                      <div className="text-white font-black">Level {level} ⭐</div>
+                      <div className="text-white font-black">Рівень {level} ⭐</div>
                       <div className="text-white/30 text-xs">{totalXp}/{nextLvlXp} XP</div>
                     </div>
                     <XpBar current={totalXp} max={nextLvlXp} />
-                    <div className="text-white/30 text-xs mt-1.5">{nextLvlXp - totalXp} XP to Level {level+1}</div>
+                    <div className="text-white/30 text-xs mt-1.5">{nextLvlXp - totalXp} XP до Рівня {level+1}</div>
                   </div>
                   <div className="bg-white/5 border border-white/10 rounded-3xl p-5">
-                    <h3 className="text-white font-bold mb-4">Achievements</h3>
+                    <h3 className="text-white font-bold mb-4">Досягнення</h3>
                     <div className="grid grid-cols-6 gap-3">
                       {[
-                        { icon:"🔥", name:"On Fire",      desc:"7-day streak",      unlocked:true  },
-                        { icon:"⚡", name:"Quick Start",  desc:"First lesson done", unlocked:true  },
-                        { icon:"🌙", name:"Night Owl",    desc:"Learn after 10pm",  unlocked:true  },
-                        { icon:"💎", name:"Gem Collector",desc:"Earn 500 gems",     unlocked:false },
-                        { icon:"🏆", name:"Champion",     desc:"Top 3 leaderboard", unlocked:false },
-                        { icon:"🎯", name:"Sharp",        desc:"100% accuracy",     unlocked:false },
+                        { icon:"🔥", name:"У вогні",      desc:"Серія 7 днів",      unlocked:true  },
+                        { icon:"⚡", name:"Швидкий старт",  desc:"Перший урок пройдено", unlocked:true  },
+                        { icon:"🌙", name:"Нічна сова",    desc:"Вчись після 22:00",  unlocked:true  },
+                        { icon:"💎", name:"Збирач самоцвітів",desc:"Зароби 500 самоцвітів",     unlocked:false },
+                        { icon:"🏆", name:"Чемпіон",     desc:"Топ-3 рейтингу", unlocked:false },
+                        { icon:"🎯", name:"Влучний стрілець",        desc:"100% точність",     unlocked:false },
                       ].map((a,i) => (
                         <div key={i} className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border text-center ${a.unlocked ? "bg-yellow-500/10 border-yellow-500/25" : "bg-white/3 border-white/5 opacity-40"}`}>
                           <div className={`text-2xl ${!a.unlocked?"grayscale":""}`}>{a.icon}</div>
@@ -767,11 +767,11 @@ export default function Home() {
               {/* Continue banner */}
               <div className="flex items-center justify-between gap-3 bg-green-500/15 border border-green-500/25 rounded-2xl px-4 py-3">
                 <div>
-                  <div className="text-white font-black text-sm">Introduce yourself 🗣️</div>
-                  <div className="text-white/40 text-xs">{dailyGoal - dailyXp} XP left today</div>
+                  <div className="text-white font-black text-sm">Познайомся 🗣️</div>
+                  <div className="text-white/40 text-xs">{dailyGoal - dailyXp} XP залишилось сьогодні</div>
                 </div>
                 <button className="bg-green-500 text-white font-black px-4 py-2 rounded-xl text-sm shadow-[0_0_16px_rgba(34,197,94,0.4)] active:scale-95 transition-all whitespace-nowrap">
-                  Go ▶
+                  Вперед ▶
                 </button>
               </div>
 
@@ -784,7 +784,7 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="flex-1">
-                  <div className="text-white text-sm font-bold">Daily goal: {dailyXp}/{dailyGoal} XP</div>
+                  <div className="text-white text-sm font-bold">Денна ціль: {dailyXp}/{dailyGoal} XP</div>
                   <XpBar current={dailyXp} max={dailyGoal} color="from-purple-500 to-violet-400" />
                 </div>
               </div>
@@ -797,14 +797,14 @@ export default function Home() {
           {/* PRACTICE */}
           {tab === "practice" && (
             <div className="px-4 py-4 space-y-3">
-              <div className="text-xl font-black pt-2 pb-1">Practice ⚔️</div>
+              <div className="text-xl font-black pt-2 pb-1">Практика ⚔️</div>
               {[
-                { icon:"🗣️", title:"Speaking",    desc:"AI feedback",       color:"from-violet-600/30 to-violet-800/20", border:"border-violet-500/20", xp:15 },
-                { icon:"👂", title:"Listening",   desc:"Native audio",      color:"from-blue-600/30 to-blue-800/20",   border:"border-blue-500/20",   xp:10 },
-                { icon:"✍️", title:"Writing",     desc:"Sentences from memory", color:"from-emerald-600/30 to-emerald-800/20", border:"border-emerald-500/20", xp:12 },
-                { icon:"🃏", title:"Flashcards",  desc:"Spaced repetition", color:"from-rose-600/30 to-rose-800/20",   border:"border-rose-500/20",   xp: 8 },
-                { icon:"⚡", title:"Speed Round", desc:"60 seconds",        color:"from-yellow-600/30 to-yellow-800/20", border:"border-yellow-500/20", xp:20 },
-                { icon:"🤖", title:"AI Chat",     desc:"AI conversation",   color:"from-cyan-600/30 to-cyan-800/20",   border:"border-cyan-500/20",   xp:25 },
+                { icon:"🗣️", title:"Мовлення",    desc:"ІІ фідбек",       color:"from-violet-600/30 to-violet-800/20", border:"border-violet-500/20", xp:15 },
+                { icon:"👂", title:"Аудіювання",   desc:"Аудіо з носіями",      color:"from-blue-600/30 to-blue-800/20",   border:"border-blue-500/20",   xp:10 },
+                { icon:"✍️", title:"Письмо",     desc:"Речення з пам'яті", color:"from-emerald-600/30 to-emerald-800/20", border:"border-emerald-500/20", xp:12 },
+                { icon:"🃏", title:"Флеш-картки",  desc:"Інтервальне повторення", color:"from-rose-600/30 to-rose-800/20",   border:"border-rose-500/20",   xp: 8 },
+                { icon:"⚡", title:"Швидкий раунд", desc:"60 секунд",        color:"from-yellow-600/30 to-yellow-800/20", border:"border-yellow-500/20", xp:20 },
+                { icon:"🤖", title:"ІІ Чат",     desc:"Розмова з ІІ",   color:"from-cyan-600/30 to-cyan-800/20",   border:"border-cyan-500/20",   xp:25 },
               ].map((m,i) => (
                 <button key={i} className={`w-full flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r ${m.color} border ${m.border} active:scale-[0.98] transition-all text-left`}>
                   <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-xl flex-shrink-0">{m.icon}</div>
@@ -821,7 +821,7 @@ export default function Home() {
           {/* LEADERBOARD */}
           {tab === "leaderboard" && (
             <div className="px-4 py-4 space-y-3">
-              <div className="text-xl font-black pt-2 pb-1">Rankings 🏆</div>
+              <div className="text-xl font-black pt-2 pb-1">Рейтинг 🏆</div>
               <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden">
                 {leaderboard.map((r,i) => (
                   <div key={i} className={`flex items-center gap-3 px-4 py-3.5 border-b border-white/5 last:border-0 ${r.isYou?"bg-purple-500/15":""}`}>
@@ -829,7 +829,7 @@ export default function Home() {
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-xs font-bold">{r.name[0]}</div>
                     <div className="flex-1">
                       <div className={`text-sm font-semibold ${r.isYou?"text-purple-300":"text-white"}`}>
-                        {r.name} {r.isYou&&<span className="text-[10px] text-purple-400">(you)</span>}
+                        {r.name} {r.isYou&&<span className="text-[10px] text-purple-400">(ти)</span>}
                       </div>
                       <div className="text-white/30 text-xs">{r.xp.toLocaleString()} XP</div>
                     </div>
@@ -845,14 +845,14 @@ export default function Home() {
               <div className="bg-gradient-to-br from-purple-600/30 to-indigo-600/20 border border-purple-500/25 rounded-3xl p-5 text-center">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-2xl font-black mx-auto">A</div>
                 <div className="text-white text-lg font-black mt-2">Andriy</div>
-                <div className="text-white/40 text-xs">Joined March 2026</div>
+                <div className="text-white/40 text-xs">Приєднався у березні 2026</div>
               </div>
               <div className="grid grid-cols-4 gap-2">
                 {[
-                  { icon:"🔥", val:streak,  label:"Streak",  color:"text-orange-400" },
+                  { icon:"🔥", val:streak,  label:"Серія",  color:"text-orange-400" },
                   { icon:"⭐", val:totalXp, label:"XP",      color:"text-yellow-400" },
-                  { icon:"📚", val:12,       label:"Lessons", color:"text-green-400"  },
-                  { icon:"🏆", val:"#4",     label:"Rank",    color:"text-purple-400" },
+                  { icon:"📚", val:12,       label:"Уроки", color:"text-green-400"  },
+                  { icon:"🏆", val:"#4",     label:"Місце",    color:"text-purple-400" },
                 ].map((s,i) => (
                   <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-3 flex flex-col items-center gap-1">
                     <span className="text-lg">{s.icon}</span>
@@ -863,7 +863,7 @@ export default function Home() {
               </div>
               <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
                 <div className="flex justify-between text-xs mb-1.5">
-                  <span className="text-white font-bold">Level {level}</span>
+                  <span className="text-white font-bold">Рівень {level}</span>
                   <span className="text-white/30">{totalXp}/{nextLvlXp} XP</span>
                 </div>
                 <XpBar current={totalXp} max={nextLvlXp} />

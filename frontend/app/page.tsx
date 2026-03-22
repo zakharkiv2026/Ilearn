@@ -195,27 +195,11 @@ function MobileMap() {
 
   return (
     <div ref={containerRef} className="relative w-full max-w-xs mx-auto">
-      {/* SVG path — drawn through measured real positions */}
-      {pathD && (
-        <svg
-          className="absolute inset-0 w-full pointer-events-none z-0"
-          style={{ height: svgH }}
-          viewBox={`0 0 ${containerRef.current?.clientWidth ?? 320} ${svgH}`}
-          preserveAspectRatio="none"
-        >
-          <path d={pathD} stroke="#052e16" strokeWidth="20" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-          <path d={pathD} stroke="#16a34a" strokeWidth="16" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-          <path d={pathD} stroke="#4ade80" strokeWidth="6"  fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.5" />
-          <path d={pathD} stroke="#bbf7d0" strokeWidth="3"  fill="none" strokeLinecap="round" strokeLinejoin="round"
-            strokeDasharray="1 20" opacity="0.7" />
-        </svg>
-      )}
-
-      {/* Items */}
-      <div className="relative z-10 flex flex-col pt-4">
+      {/* Items — рендеримо ПЕРШИМИ, SVG поверх них */}
+      <div className="relative flex flex-col pt-4">
         {items.map((item, i) => {
           if (item.type === "banner") return (
-            <div key={i} className="py-4 px-3">
+            <div key={i} className="py-4 px-3 relative" style={{ zIndex: 4 }}>
               <div className={`${item.color} rounded-2xl px-4 py-3 flex items-center justify-between border border-white/10`}>
                 <div>
                   <div className="text-white/60 text-[10px] font-bold uppercase tracking-widest">{item.label}</div>
@@ -229,7 +213,7 @@ function MobileMap() {
           if (item.type === "node") {
             const rIdx = refIdx++;
             return (
-              <div key={i} className="py-3 flex" style={{ paddingLeft: colPad[item.col] }}>
+              <div key={i} className="py-3 flex relative" style={{ paddingLeft: colPad[item.col], zIndex: 10 }}>
                 {/* circleRef іде прямо на кружок всередині MapNode */}
                 <MapNode
                   status={item.status}
@@ -244,7 +228,7 @@ function MobileMap() {
           if (item.type === "chest") {
             const rIdx = refIdx++;
             return (
-              <div key={i} className="py-4 flex justify-center">
+              <div key={i} className="py-4 flex justify-center relative" style={{ zIndex: 10 }}>
                 <div
                   ref={el => { nodeRefs.current[rIdx] = el; }}
                   className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-[0_6px_0_rgba(0,0,0,0.3)] transition-all
@@ -262,6 +246,30 @@ function MobileMap() {
           return null;
         })}
       </div>
+
+      {/* SVG поверх банерів, але pointer-events-none щоб не блокувати кліки */}
+      {pathD && (
+        <svg
+          className="absolute inset-0 w-full pointer-events-none"
+          style={{ height: svgH, zIndex: 5 }}
+          viewBox={`0 0 ${containerRef.current?.clientWidth ?? 320} ${svgH}`}
+          preserveAspectRatio="none"
+        >
+          <defs>
+            <filter id="roadglow">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+          </defs>
+          {/* Тінь */}
+          <path d={pathD} stroke="#052e16"  strokeWidth="22" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          {/* Основна суцільна лінія */}
+          <path d={pathD} stroke="#16a34a"  strokeWidth="18" fill="none" strokeLinecap="round" strokeLinejoin="round" filter="url(#roadglow)" />
+          {/* Світлий центр — ефект об'єму */}
+          <path d={pathD} stroke="#4ade80"  strokeWidth="8"  fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
+          <path d={pathD} stroke="#dcfce7"  strokeWidth="3"  fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.4" />
+        </svg>
+      )}
     </div>
   );
 }

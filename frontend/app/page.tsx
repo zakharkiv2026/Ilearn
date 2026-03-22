@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
-import { getUnits, getUnitWithLessons, mapUnitToCard, type ApiUnit } from "@/lib/api";
+import { GoogleLogin } from "@react-oauth/google";
+import { getUnits, getUnitWithLessons, mapUnitToCard, type ApiUnit, loginWithGoogle, getMe, clearToken, setToken, type AuthUser } from "@/lib/api";
 
 type Tab = "learn" | "practice" | "leaderboard" | "profile";
 
@@ -398,8 +399,26 @@ export default function Home() {
   const [units, setUnits] = useState<ReturnType<typeof mapUnitToCard>[]>([]);
   const [rawUnits, setRawUnits] = useState<ApiUnit[]>([]);
   const [loadingUnits, setLoadingUnits] = useState(true);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
+
+  // Restore session on mount
+  useEffect(() => {
+    getMe().then(u => setUser(u));
+  }, []);
+
+  async function handleGoogleLogin(credential: string) {
+    setAuthLoading(true);
+    try {
+      const data = await loginWithGoogle(credential);
+      setToken(data.token);
+      setUser({ name: data.name, email: data.email, picture: data.picture });
+    } catch { /* ignore */ } finally { setAuthLoading(false); }
+  }
+
+  function logout() { clearToken(); setUser(null); }
 
   // Fetch units + their lessons from API
   useEffect(() => {
@@ -488,14 +507,28 @@ export default function Home() {
 
           {/* User mini profile */}
           <div className="p-3 border-t border-white/5">
-            <div className="flex items-center gap-3 px-3 py-2.5 rounded-2xl bg-white/5">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-xs font-black">A</div>
-              <div className="flex-1 min-w-0">
-                <div className="text-white text-xs font-bold truncate">Andriy</div>
-                <div className="text-white/30 text-[10px]">Рівень {level} · {totalXp} XP</div>
+            {user ? (
+              <div className="flex items-center gap-3 px-3 py-2.5 rounded-2xl bg-white/5">
+                <img src={user.picture} alt="" className="w-8 h-8 rounded-full object-cover" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-white text-xs font-bold truncate">{user.name}</div>
+                  <button onClick={logout} className="text-white/30 text-[10px] hover:text-red-400 transition-colors">Вийти</button>
+                </div>
+                <div className="text-orange-400 text-xs font-black">{streak}🔥</div>
               </div>
-              <div className="text-orange-400 text-xs font-black">{streak}🔥</div>
-            </div>
+            ) : (
+              <div className="px-2">
+                <div className="text-white/30 text-[10px] mb-2 text-center">Увійди щоб зберігати прогрес</div>
+                <GoogleLogin
+                  onSuccess={r => r.credential && handleGoogleLogin(r.credential)}
+                  onError={() => {}}
+                  theme="filled_black"
+                  shape="pill"
+                  size="medium"
+                  text="signin_with"
+                />
+              </div>
+            )}
           </div>
         </aside>
 
@@ -871,11 +904,28 @@ export default function Home() {
           {/* PROFILE */}
           {tab === "profile" && (
             <div className="px-4 py-4 space-y-4">
+              {!user ? (
+                <div className="bg-gradient-to-br from-purple-600/30 to-indigo-600/20 border border-purple-500/25 rounded-3xl p-8 text-center space-y-4">
+                  <div className="text-4xl">👤</div>
+                  <div className="text-white font-black text-lg">Увійди в акаунт</div>
+                  <div className="text-white/40 text-sm">Зберігай прогрес і змагайся з іншими</div>
+                  <div className="flex justify-center">
+                    <GoogleLogin
+                      onSuccess={r => r.credential && handleGoogleLogin(r.credential)}
+                      onError={() => {}}
+                      theme="filled_black"
+                      shape="pill"
+                        />
+                  </div>
+                </div>
+              ) : (
               <div className="bg-gradient-to-br from-purple-600/30 to-indigo-600/20 border border-purple-500/25 rounded-3xl p-5 text-center">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-2xl font-black mx-auto">A</div>
-                <div className="text-white text-lg font-black mt-2">Andriy</div>
-                <div className="text-white/40 text-xs">Приєднався у березні 2026</div>
+                <img src={user.picture} alt="" className="w-16 h-16 rounded-full object-cover mx-auto" />
+                <div className="text-white text-lg font-black mt-2">{user.name}</div>
+                <div className="text-white/40 text-xs">{user.email}</div>
+                <button onClick={logout} className="mt-3 text-red-400/70 text-xs hover:text-red-400 transition-colors">Вийти з акаунту</button>
               </div>
+              )}
               <div className="grid grid-cols-4 gap-2">
                 {[
                   { icon:"🔥", val:streak,  label:"Серія",  color:"text-orange-400" },
@@ -899,6 +949,7 @@ export default function Home() {
               </div>
             </div>
           )}
+
         </main>
 
         {/* Mobile bottom nav */}

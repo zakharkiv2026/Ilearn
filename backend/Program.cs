@@ -1,4 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Google.Apis.Auth;
 using backend;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,6 +31,85 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseCors();
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+
+const string GoogleClientId = "38815317747-03jq5rgddlvlad74los5f566j0hg0a8s.apps.googleusercontent.com";
+const string JwtSecret = "ilearn-super-secret-jwt-key-2026-aprender";
+
+string CreateJwt(User user)
+{
+    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JwtSecret));
+    var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+    var token = new JwtSecurityToken(
+        claims: [
+            new Claim("sub",     user.Id.ToString()),
+            new Claim("email",   user.Email),
+            new Claim("name",    user.Name),
+            new Claim("picture", user.Picture),
+        ],
+        expires: DateTime.UtcNow.AddDays(30),
+        signingCredentials: creds
+    );
+    return new JwtSecurityTokenHandler().WriteToken(token);
+}
+
+app.MapPost("/api/auth/google", async (GoogleAuthRequest req, AppDbContext db) =>
+{
+    try
+    {
+        var payload = await GoogleJsonWebSignature.ValidateAsync(req.IdToken,
+            new GoogleJsonWebSignature.ValidationSettings { Audience = [GoogleClientId] });
+
+        var user = await db.Users.FirstOrDefaultAsync(u => u.GoogleId == payload.Subject);
+        if (user is null)
+        {
+            user = new User
+            {
+                GoogleId = payload.Subject,
+                Email    = payload.Email,
+                Name     = payload.Name,
+                Picture  = payload.Picture,
+            };
+            db.Users.Add(user);
+            await db.SaveChangesAsync();
+        }
+
+        var token = CreateJwt(user);
+        return Results.Ok(new { token, user.Name, user.Email, user.Picture });
+    }
+    catch
+    {
+        return Results.Unauthorized();
+    }
+});
+
+app.MapGet("/api/auth/me", (HttpContext ctx) =>
+{
+    var auth = ctx.Request.Headers.Authorization.ToString();
+    if (!auth.StartsWith("Bearer ")) return Results.Unauthorized();
+    var tokenStr = auth["Bearer ".Length..];
+    try
+    {
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JwtSecret));
+        var handler = new JwtSecurityTokenHandler();
+        handler.ValidateToken(tokenStr, new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = key,
+            ValidateIssuer = false,
+            ValidateAudience = false,
+        }, out var validated);
+        var jwt = (JwtSecurityToken)validated;
+        return Results.Ok(new
+        {
+            name    = jwt.Claims.First(c => c.Type == "name").Value,
+            email   = jwt.Claims.First(c => c.Type == "email").Value,
+            picture = jwt.Claims.First(c => c.Type == "picture").Value,
+        });
+    }
+    catch { return Results.Unauthorized(); }
+});
 
 // ── Sections ─────────────────────────────────────────────────────────────────
 
@@ -80,7 +164,6 @@ app.MapPatch("/api/lessons/{id}/complete", async (int id, AppDbContext db) =>
     if (lesson is null) return Results.NotFound();
     lesson.IsDone = true;
     lesson.IsActive = false;
-    // Unlock next lesson
     var next = await db.Lessons
         .Where(l => l.UnitId == lesson.UnitId && l.Order == lesson.Order + 1)
         .FirstOrDefaultAsync();
@@ -93,7 +176,7 @@ app.MapPatch("/api/lessons/{id}/complete", async (int id, AppDbContext db) =>
 
 app.MapGet("/api/admin/stats", async (AppDbContext db) => new
 {
-    totalUsers = 1284,
+    totalUsers = await db.Users.CountAsync(),
     activeCourses = await db.Units.CountAsync(),
     completedLessons = await db.Lessons.CountAsync(l => l.IsDone),
     newToday = 23,
@@ -110,3 +193,5 @@ app.MapGet("/api/admin/stats", async (AppDbContext db) => new
 });
 
 app.Run();
+
+record GoogleAuthRequest(string IdToken);

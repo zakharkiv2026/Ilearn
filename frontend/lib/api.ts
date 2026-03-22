@@ -1,5 +1,46 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5084";
 
+// ── Auth ──────────────────────────────────────────────────────────────────────
+
+export type AuthUser = {
+  name: string;
+  email: string;
+  picture: string;
+};
+
+export function getToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("ilearn_token");
+}
+
+export function setToken(token: string) {
+  localStorage.setItem("ilearn_token", token);
+}
+
+export function clearToken() {
+  localStorage.removeItem("ilearn_token");
+}
+
+export async function loginWithGoogle(idToken: string): Promise<{ token: string } & AuthUser> {
+  const res = await fetch(`${BASE_URL}/api/auth/google`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ idToken }),
+  });
+  if (!res.ok) throw new Error("Auth failed");
+  return res.json();
+}
+
+export async function getMe(): Promise<AuthUser | null> {
+  const token = getToken();
+  if (!token) return null;
+  const res = await fetch(`${BASE_URL}/api/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type ApiLesson = {

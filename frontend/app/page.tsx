@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 
 type Tab = "learn" | "practice" | "leaderboard" | "profile";
 
@@ -102,69 +102,104 @@ function MapNode({ status, icon, label }: { status: NodeStatus; icon: string; la
 }
 
 function MobileMap() {
-  const items: Array<
+  type MapItem =
     | { type: "banner"; label: string; title: string; color: string; icon: string }
-    | { type: "node"; status: NodeStatus; icon: string; label: string; col: number }
-    | { type: "chest"; locked?: boolean }
-  > = [
+    | { type: "node";   status: NodeStatus; icon: string; label: string; col: number }
+    | { type: "chest";  locked?: boolean };
+
+  const items: MapItem[] = [
     { type: "banner", label: "Section 1 · Unit 1", title: "Form basic sentences", color: "bg-green-700/90", icon: "📝" },
-    { type: "node", status: "done",   icon: "📝", label: "Basic greetings",      col: 2 },
-    { type: "node", status: "done",   icon: "👋", label: "Say hello & goodbye",  col: 3 },
-    { type: "node", status: "active", icon: "🗣️", label: "Introduce yourself",   col: 2 },
-    { type: "node", status: "locked", icon: "❓", label: "Ask questions",         col: 1 },
-    { type: "node", status: "locked", icon: "💬", label: "Answer about yourself", col: 0 },
+    { type: "node", status: "done",   icon: "📝", label: "Basic greetings",       col: 2 },
+    { type: "node", status: "done",   icon: "👋", label: "Say hello & goodbye",   col: 3 },
+    { type: "node", status: "active", icon: "🗣️", label: "Introduce yourself",    col: 2 },
+    { type: "node", status: "locked", icon: "❓", label: "Ask questions",          col: 1 },
+    { type: "node", status: "locked", icon: "💬", label: "Answer about yourself",  col: 0 },
     { type: "chest", locked: false },
     { type: "banner", label: "Section 1 · Unit 2", title: "Numbers & time", color: "bg-blue-700/90", icon: "🔢" },
-    { type: "node", status: "locked", icon: "🔢", label: "Numbers 1–10",    col: 2 },
-    { type: "node", status: "locked", icon: "⏰", label: "Tell the time",    col: 3 },
-    { type: "node", status: "locked", icon: "📅", label: "Dates & calendar", col: 2 },
-    { type: "node", status: "locked", icon: "🧮", label: "Count objects",    col: 1 },
+    { type: "node", status: "locked", icon: "🔢", label: "Numbers 1–10",     col: 2 },
+    { type: "node", status: "locked", icon: "⏰", label: "Tell the time",     col: 3 },
+    { type: "node", status: "locked", icon: "📅", label: "Dates & calendar",  col: 2 },
+    { type: "node", status: "locked", icon: "🧮", label: "Count objects",     col: 1 },
     { type: "chest", locked: true },
     { type: "banner", label: "Section 2 · Unit 1", title: "Food & daily life", color: "bg-rose-700/90", icon: "🍎" },
-    { type: "node", status: "locked", icon: "🍎", label: "Food & drinks",          col: 2 },
-    { type: "node", status: "locked", icon: "🍽️", label: "Order at restaurant",    col: 3 },
-    { type: "node", status: "locked", icon: "🛒", label: "Shopping vocabulary",    col: 2 },
-    { type: "node", status: "locked", icon: "💳", label: "Paying & prices",        col: 1 },
+    { type: "node", status: "locked", icon: "🍎", label: "Food & drinks",           col: 2 },
+    { type: "node", status: "locked", icon: "🍽️", label: "Order at restaurant",     col: 3 },
+    { type: "node", status: "locked", icon: "🛒", label: "Shopping vocabulary",     col: 2 },
+    { type: "node", status: "locked", icon: "💳", label: "Paying & prices",         col: 1 },
     { type: "chest", locked: true },
   ];
 
-  const colPad: Record<number, string> = { 0: "32px", 1: "72px", 2: "120px", 3: "168px", 4: "208px" };
-  const colCx:  Record<number, number> = { 0: 64,     1: 104,    2: 152,     3: 200,     4: 240    };
+  const colPad: Record<number, string> = { 0: "28px", 1: "68px", 2: "116px", 3: "164px", 4: "204px" };
 
-  let pts: [number, number][] = [];
-  let y = 80;
-  for (const item of items) {
-    if (item.type === "banner")      y += 80;
-    else if (item.type === "node")  { pts.push([colCx[item.col], y]); y += 96; }
-    else if (item.type === "chest")  y += 80;
-  }
+  // ── Measure real node positions ─────────────────────────────────────────
+  const containerRef = useRef<HTMLDivElement>(null);
+  // Only nodes and chests are "connectable" — collect their indices among items
+  const connectableIndices = items.reduce<number[]>((acc, item, i) => {
+    if (item.type === "node" || item.type === "chest") acc.push(i);
+    return acc;
+  }, []);
+  const nodeRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [pathD, setPathD] = useState("");
+  const [svgH, setSvgH] = useState(0);
 
-  function makePath(pts: [number, number][]) {
+  function buildPath(pts: [number, number][]) {
     if (pts.length < 2) return "";
     let d = `M${pts[0][0]},${pts[0][1]}`;
     for (let i = 1; i < pts.length; i++) {
-      const [x1, y1] = pts[i-1], [x2, y2] = pts[i];
-      const cy = (y1 + y2) / 2;
-      d += ` C${x1},${cy} ${x2},${cy} ${x2},${y2}`;
+      const [x1, y1] = pts[i - 1], [x2, y2] = pts[i];
+      const mid = (y1 + y2) / 2;
+      d += ` C${x1},${mid} ${x2},${mid} ${x2},${y2}`;
     }
     return d;
   }
 
-  const totalH = y + 40;
-  const pathD = makePath(pts);
+  function measure() {
+    if (!containerRef.current) return;
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const pts: [number, number][] = [];
+    for (const el of nodeRefs.current) {
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      // center of the element relative to container
+      const cx = r.left - containerRect.left + r.width / 2;
+      const cy = r.top  - containerRect.top  + r.height / 2;
+      pts.push([cx, cy]);
+    }
+    if (pts.length) {
+      setPathD(buildPath(pts));
+      setSvgH(containerRef.current.scrollHeight);
+    }
+  }
+
+  useLayoutEffect(() => {
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  });
+
+  // Assign refs to connectable items in render order
+  let refIdx = 0;
 
   return (
-    <div className="relative w-full max-w-xs mx-auto" style={{ minHeight: totalH }}>
-      <svg className="absolute inset-0 w-full pointer-events-none" style={{ height: totalH }}
-        viewBox={`0 0 320 ${totalH}`} preserveAspectRatio="xMidYMid meet">
-        <path d={pathD} stroke="#052e16" strokeWidth="20" fill="none" strokeLinecap="round" />
-        <path d={pathD} stroke="#16a34a" strokeWidth="16" fill="none" strokeLinecap="round" />
-        <path d={pathD} stroke="#4ade80" strokeWidth="6"  fill="none" strokeLinecap="round" opacity="0.5" />
-        <path d={pathD} stroke="#bbf7d0" strokeWidth="3"  fill="none" strokeLinecap="round"
-          strokeDasharray="1 20" opacity="0.7" />
-      </svg>
+    <div ref={containerRef} className="relative w-full max-w-xs mx-auto">
+      {/* SVG path — drawn through measured real positions */}
+      {pathD && (
+        <svg
+          className="absolute inset-0 w-full pointer-events-none z-0"
+          style={{ height: svgH }}
+          viewBox={`0 0 ${containerRef.current?.clientWidth ?? 320} ${svgH}`}
+          preserveAspectRatio="none"
+        >
+          <path d={pathD} stroke="#052e16" strokeWidth="20" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={pathD} stroke="#16a34a" strokeWidth="16" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={pathD} stroke="#4ade80" strokeWidth="6"  fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.5" />
+          <path d={pathD} stroke="#bbf7d0" strokeWidth="3"  fill="none" strokeLinecap="round" strokeLinejoin="round"
+            strokeDasharray="1 20" opacity="0.7" />
+        </svg>
+      )}
 
-      <div className="relative flex flex-col pt-4">
+      {/* Items */}
+      <div className="relative z-10 flex flex-col pt-4">
         {items.map((item, i) => {
           if (item.type === "banner") return (
             <div key={i} className="py-4 px-3">
@@ -177,19 +212,37 @@ function MobileMap() {
               </div>
             </div>
           );
-          if (item.type === "node") return (
-            <div key={i} className="py-3 flex" style={{ paddingLeft: colPad[item.col] }}>
-              <MapNode status={item.status} icon={item.icon} label={item.label} />
-            </div>
-          );
-          if (item.type === "chest") return (
-            <div key={i} className="py-4 flex justify-center">
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-[0_6px_0_rgba(0,0,0,0.3)]
-                ${item.locked ? "bg-[#374151] opacity-40" : "bg-gradient-to-b from-yellow-400 to-orange-500 shadow-[0_6px_0_#b45309] cursor-pointer hover:scale-105 transition-all"}`}>
-                🎁
+
+          if (item.type === "node") {
+            const rIdx = refIdx++;
+            return (
+              <div key={i} className="py-3 flex" style={{ paddingLeft: colPad[item.col] }}>
+                {/* Ref wrapper — same size as the node button (w-16 h-16) */}
+                <div ref={el => { nodeRefs.current[rIdx] = el; }} className="w-16 h-16 flex items-center justify-center">
+                  <MapNode status={item.status} icon={item.icon} label={item.label} />
+                </div>
               </div>
-            </div>
-          );
+            );
+          }
+
+          if (item.type === "chest") {
+            const rIdx = refIdx++;
+            return (
+              <div key={i} className="py-4 flex justify-center">
+                <div
+                  ref={el => { nodeRefs.current[rIdx] = el; }}
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-[0_6px_0_rgba(0,0,0,0.3)] transition-all
+                    ${item.locked
+                      ? "bg-[#374151] opacity-40"
+                      : "bg-gradient-to-b from-yellow-400 to-orange-500 shadow-[0_6px_0_#b45309] cursor-pointer hover:scale-105"
+                    }`}
+                >
+                  🎁
+                </div>
+              </div>
+            );
+          }
+
           return null;
         })}
       </div>

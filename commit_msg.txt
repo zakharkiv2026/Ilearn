@@ -1,1 +1,1 @@
-fix: custom scrollbar and stable scrollbar gutter
+style: green scrollbar matching site theme

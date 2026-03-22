@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { getUnits, getUnitWithLessons, mapUnitToCard, type ApiUnit } from "@/lib/api";
 
 type Tab = "learn" | "practice" | "leaderboard" | "profile";
 
@@ -109,33 +110,56 @@ function MapNode({
   );
 }
 
-function MobileMap() {
+// ── MobileMap colour mapping (from gradient string) ─────────────────────────
+const bannerColorMap: Record<string, string> = {
+  green:  "bg-green-700/90",
+  blue:   "bg-blue-700/90",
+  rose:   "bg-rose-700/90",
+  violet: "bg-violet-700/90",
+  yellow: "bg-yellow-700/90",
+  indigo: "bg-indigo-700/90",
+  pink:   "bg-pink-700/90",
+  emerald:"bg-emerald-700/90",
+};
+
+function bannerColorFromGradient(color: string) {
+  const key = Object.keys(bannerColorMap).find(k => color.includes(k));
+  return bannerColorMap[key ?? "blue"];
+}
+
+// Zigzag column pattern for mobile map nodes
+const COL_PATTERN = [2, 3, 2, 1, 0, 1, 2, 3, 2, 1, 0, 1, 2, 3];
+
+function MobileMap({ units }: { units: ApiUnit[] }) {
   type MapItem =
     | { type: "banner"; label: string; title: string; color: string; icon: string }
     | { type: "node";   status: NodeStatus; icon: string; label: string; col: number }
     | { type: "chest";  locked?: boolean };
 
-  const items: MapItem[] = [
-    { type: "banner", label: "Розділ 1 · Юніт 1", title: "Складай базові речення", color: "bg-green-700/90", icon: "📝" },
-    { type: "node", status: "done",   icon: "📝", label: "Базові привітання",       col: 2 },
-    { type: "node", status: "done",   icon: "👋", label: "Привітання та прощання",   col: 3 },
-    { type: "node", status: "active", icon: "🗣️", label: "Познайомся",    col: 2 },
-    { type: "node", status: "locked", icon: "❓", label: "Задавай питання",          col: 1 },
-    { type: "node", status: "locked", icon: "💬", label: "Розповідай про себе",  col: 0 },
-    { type: "chest", locked: false },
-    { type: "banner", label: "Розділ 1 · Юніт 2", title: "Числа та час", color: "bg-blue-700/90", icon: "🔢" },
-    { type: "node", status: "locked", icon: "🔢", label: "Числа 1–10",     col: 2 },
-    { type: "node", status: "locked", icon: "⏰", label: "Говори про час",     col: 3 },
-    { type: "node", status: "locked", icon: "📅", label: "Дати та календар",  col: 2 },
-    { type: "node", status: "locked", icon: "🧮", label: "Рахуй предмети",     col: 1 },
-    { type: "chest", locked: true },
-    { type: "banner", label: "Розділ 2 · Юніт 1", title: "Їжа та побут", color: "bg-rose-700/90", icon: "🍎" },
-    { type: "node", status: "locked", icon: "🍎", label: "Їжа та напої",           col: 2 },
-    { type: "node", status: "locked", icon: "🍽️", label: "Замовляй в ресторані",     col: 3 },
-    { type: "node", status: "locked", icon: "🛒", label: "Словник покупок",     col: 2 },
-    { type: "node", status: "locked", icon: "💳", label: "Оплата та ціни",         col: 1 },
-    { type: "chest", locked: true },
-  ];
+  // Build items dynamically from API units
+  const items: MapItem[] = [];
+  if (units.length === 0) {
+    // Fallback skeleton while loading
+    items.push({ type: "banner", label: "Завантаження...", title: "", color: "bg-white/10", icon: "⏳" });
+  } else {
+    for (const u of units) {
+      const sectionLabel = `${u.sectionName} · Юніт ${u.id}`;
+      items.push({
+        type: "banner",
+        label: sectionLabel,
+        title: u.title,
+        color: bannerColorFromGradient(u.color),
+        icon: u.icon,
+      });
+      const lessons = u.lessons ?? [];
+      const allDone = lessons.length > 0 && lessons.every(l => l.isDone);
+      lessons.forEach((l, idx) => {
+        const status: NodeStatus = l.isDone ? "done" : l.isActive ? "active" : "locked";
+        items.push({ type: "node", status, icon: u.icon, label: l.title, col: COL_PATTERN[idx % COL_PATTERN.length] });
+      });
+      items.push({ type: "chest", locked: !allDone });
+    }
+  }
 
   const colPad: Record<number, string> = { 0: "28px", 1: "68px", 2: "116px", 3: "164px", 4: "204px" };
 
@@ -371,7 +395,34 @@ function StatWidget({ icon, value, label, sub, color }: {
 export default function Home() {
   const [tab, setTab] = useState<Tab>("learn");
   const [mounted, setMounted] = useState(false);
+  const [units, setUnits] = useState<ReturnType<typeof mapUnitToCard>[]>([]);
+  const [rawUnits, setRawUnits] = useState<ApiUnit[]>([]);
+  const [loadingUnits, setLoadingUnits] = useState(true);
+
   useEffect(() => { setMounted(true); }, []);
+
+  // Fetch units + their lessons from API
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        setLoadingUnits(true);
+        const list = await getUnits();
+        // Fetch full unit data (with lessons) in parallel
+        const full = await Promise.all(list.map(u => getUnitWithLessons(u.id)));
+        if (!cancelled) {
+          setRawUnits(full);
+          setUnits(full.map(mapUnitToCard));
+        }
+      } catch (err) {
+        console.error("Failed to load units:", err);
+      } finally {
+        if (!cancelled) setLoadingUnits(false);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
 
   const streak   = 7;
   const dailyXp  = 30;
@@ -379,46 +430,6 @@ export default function Home() {
   const level    = 4;
   const totalXp  = 340;
   const nextLvlXp = 500;
-
-  const units = [
-    {
-      unit: 1, section: "Розділ 1", icon: "📝", progress: 40,
-      image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=80",
-      color: "bg-gradient-to-r from-green-700/80 to-emerald-700/80",
-      border: "border-green-500/25", glow: "shadow-[0_4px_24px_rgba(34,197,94,0.2)]",
-      lessons: [
-        { title: "Базові привітання",      type: "Словник",   done: true  },
-        { title: "Привітання та прощання",  type: "Мовлення",     done: true  },
-        { title: "Познайомся",   type: "Розмова", active: true },
-        { title: "Задавай прості питання", type: "Граматика",      locked: true },
-        { title: "Розповідай про себе",type: "Аудіювання",    locked: true },
-      ],
-    },
-    {
-      unit: 2, section: "Розділ 1", icon: "🔢", progress: 0,
-      image: "https://images.unsplash.com/photo-1501139083538-0139583c060f?w=800&q=80",
-      color: "bg-gradient-to-r from-blue-700/80 to-indigo-700/80",
-      border: "border-blue-500/20", glow: "shadow-[0_4px_24px_rgba(59,130,246,0.15)]",
-      lessons: [
-        { title: "Числа 1–10",  type: "Словник", locked: true },
-        { title: "Говори про час", type: "Розмова", locked: true },
-        { title: "Дати та календар", type: "Граматика", locked: true },
-        { title: "Рахуй предмети", type: "Практика",   locked: true },
-      ],
-    },
-    {
-      unit: 3, section: "Розділ 2", icon: "🍎", progress: 0,
-      image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80",
-      color: "bg-gradient-to-r from-rose-700/80 to-pink-700/80",
-      border: "border-rose-500/20", glow: "shadow-[0_4px_24px_rgba(244,63,94,0.15)]",
-      lessons: [
-        { title: "Їжа та напої",       type: "Словник",   locked: true },
-        { title: "Замовляй в ресторані", type: "Розмова", locked: true },
-        { title: "Висловлюй вподобання", type: "Мовлення",     locked: true },
-        { title: "Покупки",      type: "Словник",   locked: true },
-      ],
-    },
-  ];
 
   const leaderboard = [
     { name: "Sophia", xp: 4820 },
@@ -535,7 +546,17 @@ export default function Home() {
                       </button>
                     </div>
 
-                    {units.map(u => <UnitCard key={u.unit} {...u} />)}
+                    {loadingUnits
+                      ? [1, 2, 3].map(i => (
+                          <div key={i} className="rounded-3xl border border-white/10 overflow-hidden animate-pulse">
+                            <div className="h-36 bg-white/5" />
+                            <div className="p-4 space-y-2">
+                              {[1, 2, 3].map(j => <div key={j} className="h-12 bg-white/5 rounded-xl" />)}
+                            </div>
+                          </div>
+                        ))
+                      : units.map(u => <UnitCard key={u.unit} {...u} />)
+                    }
                   </div>
 
                   {/* Sidebar */}
@@ -798,7 +819,7 @@ export default function Home() {
               </div>
 
               {/* The map */}
-              <MobileMap />
+              <MobileMap units={rawUnits} />
             </div>
           )}
 

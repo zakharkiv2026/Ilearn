@@ -10,6 +10,32 @@ public class User
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
 
+// Vocabulary word inside a lesson
+public class Word
+{
+    public int Id { get; set; }
+    public int LessonId { get; set; }
+    public Lesson? Lesson { get; set; }
+    public string Es { get; set; } = "";       // Spanish
+    public string Uk { get; set; } = "";       // Ukrainian translation
+    public string Example { get; set; } = "";  // Example sentence in Spanish
+    public string ExampleUk { get; set; } = ""; // Translation of example
+    public int Order { get; set; }
+}
+
+// Exercise (multiple choice, fill-in, match)
+public class Exercise
+{
+    public int Id { get; set; }
+    public int LessonId { get; set; }
+    public Lesson? Lesson { get; set; }
+    public string Type { get; set; } = ""; // "choice", "fill", "translate"
+    public string Question { get; set; } = "";
+    public string OptionsJson { get; set; } = "[]"; // JSON array of strings
+    public string Answer { get; set; } = "";
+    public int Order { get; set; }
+}
+
 public class UserLesson
 {
     public int Id { get; set; }

@@ -156,6 +156,44 @@ export async function completeLesson(id: number): Promise<void> {
 // ── Mappers ───────────────────────────────────────────────────────────────────
 // Convert API response → props accepted by UnitCard / MobileMap
 
+export type ApiWord = {
+  id: number;
+  es: string;
+  uk: string;
+  example: string;
+  exampleUk: string;
+  order: number;
+};
+
+export type ApiExercise = {
+  id: number;
+  type: string; // "choice" | "translate"
+  question: string;
+  optionsJson: string;
+  answer: string;
+  order: number;
+};
+
+export type ApiLessonContent = {
+  lesson: { id: number; title: string; type: string; xpReward: number };
+  words: ApiWord[];
+  exercises: ApiExercise[];
+};
+
+export async function getLessonContent(id: number): Promise<ApiLessonContent | null> {
+  const res = await fetch(`${BASE_URL}/api/lessons/${id}/content`);
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export async function completeLessonAuth(id: number): Promise<void> {
+  const token = getToken();
+  await fetch(`${BASE_URL}/api/lessons/${id}/complete`, {
+    method: "PATCH",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+}
+
 export function mapUnitToCard(u: ApiUnit) {
   const { border, glow } = themeFromColor(u.color);
   return {
@@ -169,8 +207,10 @@ export function mapUnitToCard(u: ApiUnit) {
     glow,
     progress: u.progress,
     lessons:  (u.lessons ?? []).map(l => ({
+      id:     l.id,
       title:  l.title,
       type:   l.type,
+      xp:     l.xpReward,
       done:   l.isDone,
       active: l.isActive,
       locked: l.isLocked,

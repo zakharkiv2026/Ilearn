@@ -300,6 +300,28 @@ app.MapPatch("/api/lessons/{id}/complete", async (int id, HttpContext ctx, AppDb
     return Results.Ok(new { success = true });
 });
 
+// ── Lesson content ────────────────────────────────────────────────────────────
+
+app.MapGet("/api/lessons/{id}/content", async (int id, AppDbContext db) =>
+{
+    var lesson = await db.Lessons.FindAsync(id);
+    if (lesson is null) return Results.NotFound();
+
+    var words = await db.Words
+        .Where(w => w.LessonId == id)
+        .OrderBy(w => w.Order)
+        .Select(w => new { w.Id, w.Es, w.Uk, w.Example, w.ExampleUk, w.Order })
+        .ToListAsync();
+
+    var exercises = await db.Exercises
+        .Where(e => e.LessonId == id)
+        .OrderBy(e => e.Order)
+        .Select(e => new { e.Id, e.Type, e.Question, e.OptionsJson, e.Answer, e.Order })
+        .ToListAsync();
+
+    return Results.Ok(new { lesson = new { lesson.Id, lesson.Title, lesson.Type, lesson.XpReward }, words, exercises });
+});
+
 // ── Stats (admin) ─────────────────────────────────────────────────────────────
 
 app.MapGet("/api/admin/stats", async (AppDbContext db) => new

@@ -63,10 +63,11 @@ function Owl({ size = 40 }: { size?: number }) {
 type NodeStatus = "done" | "active" | "locked";
 
 function MapNode({
-  status, icon, label, circleRef,
+  status, icon, label, circleRef, onStart,
 }: {
   status: NodeStatus; icon: string; label: string;
   circleRef?: React.RefCallback<HTMLDivElement>;
+  onStart?: () => void;
 }) {
   const [tip, setTip] = useState(false);
   return (
@@ -79,6 +80,7 @@ function MapNode({
       )}
       <button
         disabled={status === "locked"}
+        onClick={status !== "locked" ? onStart : undefined}
         onMouseEnter={() => setTip(true)} onMouseLeave={() => setTip(false)}
         className={`relative transition-all ${status !== "locked" ? "hover:scale-105 active:scale-90" : "cursor-not-allowed"}`}
       >
@@ -134,7 +136,7 @@ const COL_PATTERN = [2, 3, 2, 1, 0, 1, 2, 3, 2, 1, 0, 1, 2, 3];
 function MobileMap({ units }: { units: ApiUnit[] }) {
   type MapItem =
     | { type: "banner"; label: string; title: string; color: string; icon: string }
-    | { type: "node";   status: NodeStatus; icon: string; label: string; col: number }
+    | { type: "node";   status: NodeStatus; icon: string; label: string; col: number; lessonId: number }
     | { type: "chest";  locked?: boolean };
 
   // Build items dynamically from API units
@@ -156,7 +158,7 @@ function MobileMap({ units }: { units: ApiUnit[] }) {
       const allDone = lessons.length > 0 && lessons.every(l => l.isDone);
       lessons.forEach((l, idx) => {
         const status: NodeStatus = l.isDone ? "done" : l.isActive ? "active" : "locked";
-        items.push({ type: "node", status, icon: u.icon, label: l.title, col: COL_PATTERN[idx % COL_PATTERN.length] });
+        items.push({ type: "node", status, icon: u.icon, label: l.title, col: COL_PATTERN[idx % COL_PATTERN.length], lessonId: l.id });
       });
       items.push({ type: "chest", locked: !allDone });
     }
@@ -245,6 +247,7 @@ function MobileMap({ units }: { units: ApiUnit[] }) {
                   icon={item.icon}
                   label={item.label}
                   circleRef={el => { nodeRefs.current[rIdx] = el; }}
+                  onStart={() => { window.location.href = `/lesson?id=${item.lessonId}`; }}
                 />
               </div>
             );
@@ -303,12 +306,17 @@ function MobileMap({ units }: { units: ApiUnit[] }) {
 // DESKTOP COMPONENTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-function UnitCard({ unit, section, icon, color, border, glow, progress, lessons, image }: {
-  unit: number; section: string; icon: string; color: string; border: string; glow: string;
+function UnitCard({ unit, section, title, icon, color, border, glow, progress, lessons, image }: {
+  unit: number; section: string; title: string; icon: string; color: string; border: string; glow: string;
   progress: number; image: string;
-  lessons: { title: string; type: string; done?: boolean; locked?: boolean; active?: boolean }[];
+  lessons: { id: number; title: string; type: string; xp: number; done?: boolean; locked?: boolean; active?: boolean }[];
 }) {
   const nextLesson = lessons.find(l => !l.done && !l.locked);
+
+  function goLesson(id: number) {
+    window.location.href = `/lesson?id=${id}`;
+  }
+
   return (
     <div className={`rounded-3xl border ${border} overflow-hidden ${glow}`}>
       {/* Header з фоновою картинкою */}
@@ -321,7 +329,7 @@ function UnitCard({ unit, section, icon, color, border, glow, progress, lessons,
             <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl border border-white/20">{icon}</div>
             <div>
               <div className="text-white/70 text-[10px] font-bold uppercase tracking-widest">{section}</div>
-              <div className="text-white font-black text-lg drop-shadow-lg">Юніт {unit}</div>
+              <div className="text-white font-black text-lg drop-shadow-lg">{title}</div>
             </div>
           </div>
           <div className="text-right">
@@ -337,6 +345,7 @@ function UnitCard({ unit, section, icon, color, border, glow, progress, lessons,
       <div className="p-4 grid grid-cols-1 xl:grid-cols-2 gap-2">
         {lessons.map((l, i) => (
           <button key={i} disabled={l.locked}
+            onClick={() => !l.locked && goLesson(l.id)}
             className={`flex items-center gap-3 p-3 rounded-xl text-left transition-all
               ${l.done   ? "bg-green-500/10 border border-green-500/20 hover:bg-green-500/15" : ""}
               ${l.active ? "bg-white/10 border border-white/20 hover:bg-white/15" : ""}
@@ -355,7 +364,7 @@ function UnitCard({ unit, section, icon, color, border, glow, progress, lessons,
             </div>
             {!l.locked && (
               <div className={`text-xs font-bold flex-shrink-0 ${l.done ? "text-green-400" : "text-white/30"}`}>
-                {l.done ? "+10 XP ✓" : "+10 XP"}
+                {l.done ? `+${l.xp} XP ✓` : `+${l.xp} XP`}
               </div>
             )}
           </button>
@@ -365,7 +374,9 @@ function UnitCard({ unit, section, icon, color, border, glow, progress, lessons,
       {/* CTA */}
       {nextLesson && (
         <div className="px-4 pb-4">
-          <button className="w-full bg-green-500 hover:bg-green-400 active:scale-[0.98] text-white font-black py-3 rounded-2xl transition-all shadow-[0_0_20px_rgba(34,197,94,0.3)] text-sm">
+          <button
+            onClick={() => goLesson(nextLesson.id)}
+            className="w-full bg-green-500 hover:bg-green-400 active:scale-[0.98] text-white font-black py-3 rounded-2xl transition-all shadow-[0_0_20px_rgba(34,197,94,0.3)] text-sm">
             Продовжити: {nextLesson.title} ▶
           </button>
         </div>

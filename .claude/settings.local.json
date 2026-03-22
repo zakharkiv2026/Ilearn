@@ -51,7 +51,11 @@
       "Bash(cmd //c \"taskkill /IM backend.exe /F 2>&1\")",
       "Bash(cmd //c \"del C:\\\\Users\\\\andri\\\\Desktop\\\\Ilearn\\\\backend\\\\ilearn.db 2>&1\")",
       "Bash(cmd //c \"del C:\\\\Users\\\\andri\\\\Desktop\\\\Ilearn\\\\backend\\\\ilearn.db-shm 2>&1\")",
-      "Bash(cmd //c \"del C:\\\\Users\\\\andri\\\\Desktop\\\\Ilearn\\\\backend\\\\ilearn.db-wal 2>&1\")"
+      "Bash(cmd //c \"del C:\\\\Users\\\\andri\\\\Desktop\\\\Ilearn\\\\backend\\\\ilearn.db-wal 2>&1\")",
+      "Read(//mnt/c/Users/andri/Desktop/Ilearn/**)",
+      "Bash(taskkill.exe /IM backend.exe /F)",
+      "Bash(rm -f ilearn.db)",
+      "Bash(ls /c/Users/andri/Desktop/Ilearn/frontend/next.config*)"
     ]
   }
 }

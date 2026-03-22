@@ -277,7 +277,13 @@ function LearningMap() {
           if (item.type === "node") {
             return (
               <div key={i} className="py-4 flex" style={{ paddingLeft: colToOffset[item.col] }}>
-                <MapNode {...item} />
+                <MapNode
+                  status={item.status}
+                  icon={item.icon}
+                  label={item.label}
+                  x={colToOffset[item.col]}
+                  isOwl={item.isOwl}
+                />
               </div>
             );
           }

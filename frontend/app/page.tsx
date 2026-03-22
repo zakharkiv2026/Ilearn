@@ -426,6 +426,8 @@ export default function Home() {
     const url = t === "learn" ? "/" : `/${t}`;
     history.pushState(null, "", url);
     setTab(t);
+    // Reset scroll position on all main containers
+    document.querySelectorAll("main").forEach(el => { el.scrollTop = 0; });
     if (t === "leaderboard" && leaderboard.length === 0) {
       setLeaderboardLoading(true);
       getLeaderboard().then(d => { setLeaderboard(d); setLeaderboardLoading(false); });
@@ -619,7 +621,7 @@ export default function Home() {
           </header>
 
           {/* Content */}
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 overflow-y-scroll" style={{ scrollbarGutter: "stable" }}>
             <div className="max-w-6xl mx-auto px-6 py-6">
 
               {/* ── LEARN ───────────────────────────────────────────── */}
@@ -914,7 +916,7 @@ export default function Home() {
         </header>
 
         {/* Mobile content */}
-        <main className="flex-1 overflow-y-auto pb-24">
+        <main className="flex-1 overflow-y-scroll pb-24" style={{ scrollbarGutter: "stable" }}>
 
           {/* LEARN — map */}
           {tab === "learn" && (

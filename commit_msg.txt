@@ -1,1 +1,1 @@
-feat: YouTube video support in lesson player
+fix: nav jitter + add videos to all 15 lessons

@@ -55,7 +55,16 @@
       "Read(//mnt/c/Users/andri/Desktop/Ilearn/**)",
       "Bash(taskkill.exe /IM backend.exe /F)",
       "Bash(rm -f ilearn.db)",
-      "Bash(ls /c/Users/andri/Desktop/Ilearn/frontend/next.config*)"
+      "Bash(ls /c/Users/andri/Desktop/Ilearn/frontend/next.config*)",
+      "WebSearch",
+      "WebFetch(domain:archive.org)",
+      "WebFetch(domain:www.youtube.com)",
+      "WebFetch(domain:www.classcentral.com)",
+      "WebFetch(domain:www.spanishpod101.com)",
+      "WebFetch(domain:ehs.leusd.k12.ca.us)",
+      "WebFetch(domain:senorjordan.com)",
+      "WebFetch(domain:freelanguage.org)",
+      "WebFetch(domain:www.opschools.org)"
     ]
   }
 }

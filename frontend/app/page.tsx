@@ -60,7 +60,12 @@ function Owl({ size = 40 }: { size?: number }) {
 
 type NodeStatus = "done" | "active" | "locked";
 
-function MapNode({ status, icon, label }: { status: NodeStatus; icon: string; label: string }) {
+function MapNode({
+  status, icon, label, circleRef,
+}: {
+  status: NodeStatus; icon: string; label: string;
+  circleRef?: React.RefCallback<HTMLDivElement>;
+}) {
   const [tip, setTip] = useState(false);
   return (
     <div className="relative flex flex-col items-center">
@@ -81,11 +86,14 @@ function MapNode({ status, icon, label }: { status: NodeStatus; icon: string; la
             <div className="absolute inset-0 rounded-full border-4 border-green-400/40 scale-125" />
           </>
         )}
-        <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl relative z-10
-          ${status === "done"   ? "bg-green-500 shadow-[0_6px_0_#15803d]" : ""}
-          ${status === "active" ? "bg-green-400 shadow-[0_6px_0_#16a34a] ring-4 ring-white/25" : ""}
-          ${status === "locked" ? "bg-[#374151] shadow-[0_6px_0_#1f2937]" : ""}
-        `}>
+        {/* circleRef чіпляємо прямо до кружка */}
+        <div
+          ref={circleRef}
+          className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl relative z-10
+            ${status === "done"   ? "bg-green-500 shadow-[0_6px_0_#15803d]" : ""}
+            ${status === "active" ? "bg-green-400 shadow-[0_6px_0_#16a34a] ring-4 ring-white/25" : ""}
+            ${status === "locked" ? "bg-[#374151] shadow-[0_6px_0_#1f2937]" : ""}
+          `}>
           {status === "done"   && <span className="text-white font-black text-2xl">★</span>}
           {status === "active" && <span>{icon}</span>}
           {status === "locked" && <span className="opacity-40 text-xl">🔒</span>}
@@ -217,10 +225,13 @@ function MobileMap() {
             const rIdx = refIdx++;
             return (
               <div key={i} className="py-3 flex" style={{ paddingLeft: colPad[item.col] }}>
-                {/* Ref wrapper — same size as the node button (w-16 h-16) */}
-                <div ref={el => { nodeRefs.current[rIdx] = el; }} className="w-16 h-16 flex items-center justify-center">
-                  <MapNode status={item.status} icon={item.icon} label={item.label} />
-                </div>
+                {/* circleRef іде прямо на кружок всередині MapNode */}
+                <MapNode
+                  status={item.status}
+                  icon={item.icon}
+                  label={item.label}
+                  circleRef={el => { nodeRefs.current[rIdx] = el; }}
+                />
               </div>
             );
           }

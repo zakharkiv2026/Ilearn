@@ -49,7 +49,9 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://aprender.uk)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://www.aprender.uk)",
       "Bash(cmd //c \"taskkill /IM backend.exe /F 2>&1\")",
-      "Bash(cmd //c \"del C:\\\\Users\\\\andri\\\\Desktop\\\\Ilearn\\\\backend\\\\ilearn.db 2>&1\")"
+      "Bash(cmd //c \"del C:\\\\Users\\\\andri\\\\Desktop\\\\Ilearn\\\\backend\\\\ilearn.db 2>&1\")",
+      "Bash(cmd //c \"del C:\\\\Users\\\\andri\\\\Desktop\\\\Ilearn\\\\backend\\\\ilearn.db-shm 2>&1\")",
+      "Bash(cmd //c \"del C:\\\\Users\\\\andri\\\\Desktop\\\\Ilearn\\\\backend\\\\ilearn.db-wal 2>&1\")"
     ]
   }
 }

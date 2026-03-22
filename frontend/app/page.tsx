@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { GoogleLogin } from "@react-oauth/google";
-import { getUnits, getUnitWithLessons, mapUnitToCard, type ApiUnit, loginWithGoogle, getMe, clearToken, setToken, type AuthUser } from "@/lib/api";
+import { getUnits, getUnitWithLessons, mapUnitToCard, type ApiUnit, loginWithGoogle, getMe, clearToken, setToken, getUserStats, type AuthUser, type UserStats } from "@/lib/api";
 
 type Tab = "learn" | "practice" | "leaderboard" | "profile";
 
@@ -401,12 +401,13 @@ export default function Home() {
   const [loadingUnits, setLoadingUnits] = useState(true);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
+  const [stats, setStats] = useState<UserStats | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
 
   // Restore session on mount
   useEffect(() => {
-    getMe().then(u => setUser(u));
+    getMe().then(u => { setUser(u); if (u) getUserStats().then(s => setStats(s)); });
   }, []);
 
   async function handleGoogleLogin(credential: string) {
@@ -415,10 +416,11 @@ export default function Home() {
       const data = await loginWithGoogle(credential);
       setToken(data.token);
       setUser({ name: data.name, email: data.email, picture: data.picture });
+      getUserStats().then(s => setStats(s));
     } catch { /* ignore */ } finally { setAuthLoading(false); }
   }
 
-  function logout() { clearToken(); setUser(null); }
+  function logout() { clearToken(); setUser(null); setStats(null); }
 
   // Fetch units + their lessons from API
   useEffect(() => {
@@ -443,12 +445,12 @@ export default function Home() {
     return () => { cancelled = true; };
   }, []);
 
-  const streak   = 7;
-  const dailyXp  = 30;
-  const dailyGoal = 50;
-  const level    = 4;
-  const totalXp  = 340;
-  const nextLvlXp = 500;
+  const streak    = stats?.streak        ?? 0;
+  const totalXp   = stats?.totalXp       ?? 0;
+  const level     = stats?.level         ?? 1;
+  const nextLvlXp = stats?.nextLevelXp   ?? 100;
+  const dailyXp   = stats?.currentLevelXp ?? 0;
+  const dailyGoal = stats?.nextLevelXp   ?? 100;
 
   const leaderboard = [
     { name: "Sophia", xp: 4820 },
@@ -614,10 +616,10 @@ export default function Home() {
 
                     {/* Stats */}
                     <div className="grid grid-cols-2 gap-3">
-                      <StatWidget icon="🔥" value={streak}   label="Серія днів"  sub="Рекорд: 14" color="bg-orange-500/20" />
-                      <StatWidget icon="⭐" value={totalXp}  label="Всього XP"    sub={`Lvl ${level} → ${level+1}`} color="bg-yellow-500/20" />
-                      <StatWidget icon="📚" value={12}        label="Уроків пройдено" sub="Цього тижня: 5" color="bg-green-500/20" />
-                      <StatWidget icon="🏆" value="#4"        label="Рейтинг" sub="Топ 10%"      color="bg-purple-500/20" />
+                      <StatWidget icon="🔥" value={streak}                         label="Серія днів"     sub={streak > 0 ? "Так тримати!" : "Почни сьогодні"} color="bg-orange-500/20" />
+                      <StatWidget icon="⭐" value={totalXp}                        label="Всього XP"      sub={`Lvl ${level} → ${level+1}`} color="bg-yellow-500/20" />
+                      <StatWidget icon="📚" value={stats?.completedLessons ?? 0}   label="Уроків пройдено" sub={user ? "Твій прогрес" : "Увійди для статистики"} color="bg-green-500/20" />
+                      <StatWidget icon="🏆" value={stats ? `#${stats.rank}` : "—"} label="Рейтинг"        sub={user ? "Серед гравців" : "Увійди для рейтингу"} color="bg-purple-500/20" />
                     </div>
 
                     {/* Level */}
@@ -926,27 +928,32 @@ export default function Home() {
                 <button onClick={logout} className="mt-3 text-red-400/70 text-xs hover:text-red-400 transition-colors">Вийти з акаунту</button>
               </div>
               )}
-              <div className="grid grid-cols-4 gap-2">
-                {[
-                  { icon:"🔥", val:streak,  label:"Серія",  color:"text-orange-400" },
-                  { icon:"⭐", val:totalXp, label:"XP",      color:"text-yellow-400" },
-                  { icon:"📚", val:12,       label:"Уроки", color:"text-green-400"  },
-                  { icon:"🏆", val:"#4",     label:"Місце",    color:"text-purple-400" },
-                ].map((s,i) => (
-                  <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-3 flex flex-col items-center gap-1">
-                    <span className="text-lg">{s.icon}</span>
-                    <span className={`text-base font-black ${s.color}`}>{s.val}</span>
-                    <span className="text-white/40 text-[10px]">{s.label}</span>
+              {user && (
+                <>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      { icon:"🔥", val: streak,                           label:"Серія",  color:"text-orange-400" },
+                      { icon:"⭐", val: totalXp,                          label:"XP",     color:"text-yellow-400" },
+                      { icon:"📚", val: stats?.completedLessons ?? 0,     label:"Уроки",  color:"text-green-400"  },
+                      { icon:"🏆", val: stats ? `#${stats.rank}` : "—",   label:"Місце",  color:"text-purple-400" },
+                    ].map((s,i) => (
+                      <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-3 flex flex-col items-center gap-1">
+                        <span className="text-lg">{s.icon}</span>
+                        <span className={`text-base font-black ${s.color}`}>{s.val}</span>
+                        <span className="text-white/40 text-[10px]">{s.label}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                <div className="flex justify-between text-xs mb-1.5">
-                  <span className="text-white font-bold">Рівень {level}</span>
-                  <span className="text-white/30">{totalXp}/{nextLvlXp} XP</span>
-                </div>
-                <XpBar current={totalXp} max={nextLvlXp} />
-              </div>
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                    <div className="flex justify-between text-xs mb-1.5">
+                      <span className="text-white font-bold">Рівень {level}</span>
+                      <span className="text-white/30">{dailyXp}/{nextLvlXp} XP</span>
+                    </div>
+                    <XpBar current={dailyXp} max={nextLvlXp} />
+                    <div className="text-white/30 text-[10px] mt-1">{nextLvlXp - dailyXp} XP до Рівня {level + 1}</div>
+                  </div>
+                </>
+              )}
             </div>
           )}
 

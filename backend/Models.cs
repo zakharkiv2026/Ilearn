@@ -10,6 +10,16 @@ public class User
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
 
+public class UserLesson
+{
+    public int Id { get; set; }
+    public int UserId { get; set; }
+    public User? User { get; set; }
+    public int LessonId { get; set; }
+    public Lesson? Lesson { get; set; }
+    public DateTime CompletedAt { get; set; } = DateTime.UtcNow;
+}
+
 public class Section
 {
     public int Id { get; set; }

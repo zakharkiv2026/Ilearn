@@ -111,6 +111,88 @@ app.MapGet("/api/auth/me", (HttpContext ctx) =>
     catch { return Results.Unauthorized(); }
 });
 
+// ── User helpers ─────────────────────────────────────────────────────────────
+
+int? GetUserId(HttpContext ctx)
+{
+    var auth = ctx.Request.Headers.Authorization.ToString();
+    if (!auth.StartsWith("Bearer ")) return null;
+    var tokenStr = auth["Bearer ".Length..];
+    try
+    {
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JwtSecret));
+        var handler = new JwtSecurityTokenHandler();
+        handler.ValidateToken(tokenStr, new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = key,
+            ValidateIssuer = false,
+            ValidateAudience = false,
+        }, out var validated);
+        var jwt = (JwtSecurityToken)validated;
+        return int.Parse(jwt.Claims.First(c => c.Type == "sub").Value);
+    }
+    catch { return null; }
+}
+
+(int level, int currentXp, int nextLevelXp) CalcLevel(int totalXp)
+{
+    // Every level requires 100 * level XP: L1=100, L2=200, L3=300...
+    int lvl = 1, xp = totalXp;
+    while (xp >= lvl * 100) { xp -= lvl * 100; lvl++; }
+    return (lvl, xp, lvl * 100);
+}
+
+app.MapGet("/api/users/me/stats", async (HttpContext ctx, AppDbContext db) =>
+{
+    var userId = GetUserId(ctx);
+    if (userId is null) return Results.Unauthorized();
+
+    var userLessons = await db.UserLessons
+        .Where(ul => ul.UserId == userId)
+        .Include(ul => ul.Lesson)
+        .ToListAsync();
+
+    var totalXp = userLessons.Sum(ul => ul.Lesson?.XpReward ?? 0);
+    var completedCount = userLessons.Count;
+
+    // Streak: count consecutive days (ending today) with at least 1 lesson
+    var today = DateOnly.FromDateTime(DateTime.UtcNow);
+    var days = userLessons
+        .Select(ul => DateOnly.FromDateTime(ul.CompletedAt))
+        .Distinct()
+        .OrderByDescending(d => d)
+        .ToList();
+
+    int streak = 0;
+    var check = today;
+    foreach (var d in days)
+    {
+        if (d == check) { streak++; check = check.AddDays(-1); }
+        else if (d < check) break;
+    }
+
+    var (level, currentLevelXp, nextLevelXp) = CalcLevel(totalXp);
+
+    // Leaderboard rank
+    var allUsersXp = await db.UserLessons
+        .GroupBy(ul => ul.UserId)
+        .Select(g => new { UserId = g.Key, Xp = g.Sum(ul => ul.Lesson!.XpReward) })
+        .ToListAsync();
+    var rank = allUsersXp.Count(u => u.Xp > totalXp) + 1;
+
+    return Results.Ok(new
+    {
+        totalXp,
+        completedLessons = completedCount,
+        streak,
+        level,
+        currentLevelXp,
+        nextLevelXp,
+        rank,
+    });
+});
+
 // ── Sections ─────────────────────────────────────────────────────────────────
 
 app.MapGet("/api/sections", async (AppDbContext db) =>
@@ -158,10 +240,22 @@ app.MapGet("/api/lessons", async (AppDbContext db) =>
         .Select(l => new { l.Id, l.UnitId, l.Title, l.Type, l.Order, l.IsLocked, l.IsDone, l.IsActive, l.XpReward })
         .ToListAsync());
 
-app.MapPatch("/api/lessons/{id}/complete", async (int id, AppDbContext db) =>
+app.MapPatch("/api/lessons/{id}/complete", async (int id, HttpContext ctx, AppDbContext db) =>
 {
     var lesson = await db.Lessons.FindAsync(id);
     if (lesson is null) return Results.NotFound();
+
+    // Track per-user progress if logged in
+    var userId = GetUserId(ctx);
+    if (userId is not null)
+    {
+        var already = await db.UserLessons.AnyAsync(ul => ul.UserId == userId && ul.LessonId == id);
+        if (!already)
+        {
+            db.UserLessons.Add(new UserLesson { UserId = userId.Value, LessonId = id });
+        }
+    }
+
     lesson.IsDone = true;
     lesson.IsActive = false;
     var next = await db.Lessons

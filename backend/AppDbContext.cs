@@ -5,6 +5,7 @@ namespace backend;
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
     public DbSet<User> Users => Set<User>();
+    public DbSet<UserLesson> UserLessons => Set<UserLesson>();
     public DbSet<Section> Sections => Set<Section>();
     public DbSet<Unit> Units => Set<Unit>();
     public DbSet<Lesson> Lessons => Set<Lesson>();

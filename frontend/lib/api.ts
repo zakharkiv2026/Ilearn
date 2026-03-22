@@ -31,6 +31,16 @@ export async function loginWithGoogle(idToken: string): Promise<{ token: string 
   return res.json();
 }
 
+export async function getUserStats(): Promise<UserStats | null> {
+  const token = getToken();
+  if (!token) return null;
+  const res = await fetch(`${BASE_URL}/api/users/me/stats`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+
 export async function getMe(): Promise<AuthUser | null> {
   const token = getToken();
   if (!token) return null;
@@ -42,6 +52,16 @@ export async function getMe(): Promise<AuthUser | null> {
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+
+export type UserStats = {
+  totalXp: number;
+  completedLessons: number;
+  streak: number;
+  level: number;
+  currentLevelXp: number;
+  nextLevelXp: number;
+  rank: number;
+};
 
 export type ApiLesson = {
   id: number;

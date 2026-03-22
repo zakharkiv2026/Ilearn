@@ -155,8 +155,13 @@ function MobileMap() {
     let d = `M${pts[0][0]},${pts[0][1]}`;
     for (let i = 1; i < pts.length; i++) {
       const [x1, y1] = pts[i - 1], [x2, y2] = pts[i];
-      const mid = (y1 + y2) / 2;
-      d += ` C${x1},${mid} ${x2},${mid} ${x2},${y2}`;
+      const dy = y2 - y1;
+      // Контрольні точки виходять вертикально з кожного вузла —
+      // дає плавну S-подібну криву незалежно від відстані
+      const tension = dy * 0.55;
+      const cp1x = x1, cp1y = y1 + tension;
+      const cp2x = x2, cp2y = y2 - tension;
+      d += ` C${cp1x},${cp1y} ${cp2x},${cp2y} ${x2},${y2}`;
     }
     return d;
   }

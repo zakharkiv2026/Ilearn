@@ -412,6 +412,12 @@ export default function Home() {
   }, []);
 
   function switchTab(t: Tab) {
+    // Protected tabs require login
+    if (t === "profile" && !user) {
+      sessionStorage.setItem("login_redirect", "/profile");
+      window.location.href = "/login";
+      return;
+    }
     const url = t === "learn" ? "/" : `/${t}`;
     history.pushState(null, "", url);
     setTab(t);
@@ -428,7 +434,15 @@ export default function Home() {
 
   // Restore session on mount
   useEffect(() => {
-    getMe().then(u => { setUser(u); if (u) getUserStats().then(s => setStats(s)); });
+    // Check if just came from login page
+    const stored = sessionStorage.getItem("ilearn_user");
+    if (stored) {
+      try { setUser(JSON.parse(stored)); } catch {}
+      sessionStorage.removeItem("ilearn_user");
+    }
+    getMe().then(u => {
+      if (u) { setUser(u); getUserStats().then(s => setStats(s)); }
+    });
   }, []);
 
   async function handleGoogleLogin(credential: string) {

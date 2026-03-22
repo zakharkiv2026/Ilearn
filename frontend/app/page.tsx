@@ -394,12 +394,28 @@ function StatWidget({ icon, value, label, sub, color }: {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Home() {
+  const validTabs: Tab[] = ["learn", "practice", "leaderboard", "profile"];
+
   const [tab, setTab] = useState<Tab>(() => {
     if (typeof window === "undefined") return "learn";
-    return (localStorage.getItem("ilearn_tab") as Tab) ?? "learn";
+    const hash = window.location.hash.replace("#", "") as Tab;
+    return validTabs.includes(hash) ? hash : "learn";
   });
 
-  function switchTab(t: Tab) { setTab(t); localStorage.setItem("ilearn_tab", t); }
+  function switchTab(t: Tab) {
+    setTab(t);
+    window.location.hash = t;
+  }
+
+  // Sync tab when user navigates with browser back/forward
+  useEffect(() => {
+    function onHashChange() {
+      const hash = window.location.hash.replace("#", "") as Tab;
+      if (validTabs.includes(hash)) setTab(hash);
+    }
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
   const [mounted, setMounted] = useState(false);
   const [units, setUnits] = useState<ReturnType<typeof mapUnitToCard>[]>([]);
   const [rawUnits, setRawUnits] = useState<ApiUnit[]>([]);

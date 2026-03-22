@@ -128,3 +128,66 @@
     @apply font-sans;
   }
 }
+
+/* ── Owl App Animations ──────────────────────────────────────────── */
+
+@keyframes owlBob {
+  0%, 100% { transform: translateY(0px) rotate(-2deg); }
+  50% { transform: translateY(-8px) rotate(2deg); }
+}
+
+@keyframes owlFloat {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-12px) scale(1.04); }
+}
+
+@keyframes sparkleFloat {
+  0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.8; }
+  33% { transform: translateY(-10px) rotate(15deg); opacity: 1; }
+  66% { transform: translateY(-5px) rotate(-10deg); opacity: 0.6; }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.5); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.5); }
+  50% { box-shadow: 0 0 40px rgba(34, 197, 94, 0.9), 0 0 80px rgba(34, 197, 94, 0.3); }
+}
+
+.owl-bob {
+  animation: owlBob 3s ease-in-out infinite;
+}
+
+.owl-bob-delay {
+  animation: owlBob 3.5s ease-in-out infinite;
+  animation-delay: 0.8s;
+}
+
+.owl-float {
+  animation: owlFloat 4s ease-in-out infinite;
+}
+
+.owl-float-delay {
+  animation: owlFloat 4.5s ease-in-out infinite;
+  animation-delay: 1.2s;
+}
+
+.sparkle-float {
+  animation: sparkleFloat 3s ease-in-out infinite;
+}
+
+.sparkle-float-delay {
+  animation: sparkleFloat 3.8s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+.star-twinkle {
+  animation: twinkle 2s ease-in-out infinite;
+}
+
+.glow-pulse {
+  animation: pulse-glow 2s ease-in-out infinite;
+}

@@ -1,1 +1,1 @@
-fix: redirect to login on logout
+fix: flashcard again button re-queues word at end of deck

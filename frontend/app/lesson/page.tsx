@@ -12,11 +12,16 @@ import {
 } from "@/lib/api";
 
 // ── Flashcard ──────────────────────────────────────────────────────────────────
-function Flashcard({ word, onNext }: { word: ApiWord; onNext: () => void }) {
+function Flashcard({ word, onKnow, onAgain }: {
+  word: ApiWord;
+  onKnow: () => void;
+  onAgain: () => void;
+}) {
   const [flipped, setFlipped] = useState(false);
 
   return (
     <div className="flex flex-col items-center gap-6 w-full max-w-md mx-auto">
+      {/* Card */}
       <div
         className="relative w-full aspect-[3/2] cursor-pointer select-none"
         style={{ perspective: "1000px" }}
@@ -50,16 +55,17 @@ function Flashcard({ word, onNext }: { word: ApiWord; onNext: () => void }) {
         </div>
       </div>
 
+      {/* Buttons — always visible, work regardless of flip state */}
       <div className="flex gap-3 w-full">
         <button
-          onClick={() => setFlipped(false)}
-          className="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-white/60 text-sm hover:bg-white/10 transition-colors"
+          onClick={onAgain}
+          className="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-white/60 text-sm hover:bg-white/10 active:scale-95 transition-all"
         >
-          Ще раз
+          🔁 Ще раз
         </button>
         <button
-          onClick={onNext}
-          className="flex-1 py-3 rounded-xl bg-green-500 text-white font-semibold text-sm hover:bg-green-400 transition-colors"
+          onClick={onKnow}
+          className="flex-1 py-3 rounded-xl bg-green-500 text-white font-semibold text-sm hover:bg-green-400 active:scale-95 transition-all"
         >
           Знаю ✓
         </button>
@@ -131,6 +137,7 @@ function LessonInner() {
   const [content, setContent] = useState<ApiLessonContent | null>(null);
   const [steps, setSteps] = useState<Step[]>([]);
   const [stepIndex, setStepIndex] = useState(0);
+  const [totalSteps, setTotalSteps] = useState(0); // original total for progress bar
   const [correctCount, setCorrectCount] = useState(0);
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -141,14 +148,17 @@ function LessonInner() {
     getLessonContent(lessonId).then(c => {
       if (!c) { window.location.href = "/"; return; }
       setContent(c);
-      setSteps([
+      const initial: Step[] = [
         ...c.words.map(w => ({ kind: "word" as const, word: w })),
         ...c.exercises.map(e => ({ kind: "ex" as const, exercise: e })),
-      ]);
+      ];
+      setSteps(initial);
+      setTotalSteps(initial.length);
       setLoading(false);
     });
   }, [lessonId]);
 
+  // "Знаю" or correct exercise → advance
   const handleNext = useCallback((correct?: boolean) => {
     if (correct === true) setCorrectCount(c => c + 1);
     setStepIndex(i => {
@@ -160,6 +170,18 @@ function LessonInner() {
       return next;
     });
   }, [steps.length, lessonId]);
+
+  // "Ще раз" → push current word to the end of the queue
+  const handleAgain = useCallback(() => {
+    setSteps(prev => {
+      const current = prev[stepIndex];
+      const next = [...prev];
+      next.push(current); // re-add at end
+      setTotalSteps(t => t + 1);
+      return next;
+    });
+    setStepIndex(i => i + 1);
+  }, [stepIndex]);
 
   if (loading) {
     return (
@@ -224,7 +246,7 @@ function LessonInner() {
           ✕
         </button>
         <div className="flex-1">
-          <ProgressBar current={stepIndex} total={steps.length} />
+          <ProgressBar current={stepIndex} total={totalSteps} />
         </div>
         <span className="text-xs text-white/40 min-w-fit">
           {stepIndex + 1} / {steps.length}
@@ -242,7 +264,7 @@ function LessonInner() {
       {/* Content */}
       <div className="flex-1 flex items-center px-4 pb-8">
         {step.kind === "word" ? (
-          <Flashcard key={stepIndex} word={step.word} onNext={() => handleNext()} />
+          <Flashcard key={stepIndex} word={step.word} onKnow={() => handleNext()} onAgain={handleAgain} />
         ) : (
           <ExerciseCard key={stepIndex} exercise={step.exercise} onNext={handleNext} />
         )}

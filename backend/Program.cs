@@ -385,6 +385,22 @@ app.MapDelete("/api/admin/users/{id}", async (int id, AppDbContext db) =>
     return Results.Ok(new { deleted = id });
 });
 
+app.MapPost("/api/admin/add-video", async (AddVideoRequest req, AppDbContext db) =>
+{
+    var ex = new Exercise
+    {
+        LessonId    = req.LessonId,
+        Type        = "video",
+        Question    = req.VideoId,
+        OptionsJson = System.Text.Json.JsonSerializer.Serialize(new { title = req.Title, description = req.Description }),
+        Answer      = req.VideoId,
+        Order       = req.Order,
+    };
+    db.Exercises.Add(ex);
+    await db.SaveChangesAsync();
+    return Results.Ok(new { id = ex.Id });
+});
+
 app.MapPost("/api/admin/reset-lessons", async (AppDbContext db) =>
 {
     var units = await db.Units.Include(u => u.Lessons).ToListAsync();
@@ -425,3 +441,4 @@ app.MapGet("/api/admin/stats", async (AppDbContext db) => new
 app.Run();
 
 record GoogleAuthRequest(string IdToken);
+record AddVideoRequest(int LessonId, string VideoId, string Title, string Description, int Order);

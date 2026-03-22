@@ -113,6 +113,46 @@ function ExerciseCard({ exercise, onNext }: { exercise: ApiExercise; onNext: (co
   );
 }
 
+// ── Video card ─────────────────────────────────────────────────────────────────
+// exercise.question = YouTube video ID, exercise.answer = "" (no answer needed)
+// exercise.optionsJson = JSON with { title, description }
+function VideoCard({ exercise, onNext }: { exercise: ApiExercise; onNext: (correct: boolean) => void }) {
+  const videoId = exercise.answer || exercise.question; // video ID stored in answer field
+  const meta: { title?: string; description?: string } = (() => {
+    try { return JSON.parse(exercise.optionsJson); } catch { return {}; }
+  })();
+
+  return (
+    <div className="flex flex-col gap-4 w-full max-w-2xl mx-auto">
+      {/* Title */}
+      <div className="text-center">
+        <p className="text-xs text-white/40 uppercase tracking-widest mb-1">Відео</p>
+        <h2 className="text-lg font-bold text-white">{meta.title ?? exercise.question}</h2>
+        {meta.description && <p className="text-sm text-white/50 mt-1">{meta.description}</p>}
+      </div>
+
+      {/* YouTube embed */}
+      <div className="relative w-full rounded-2xl overflow-hidden border border-white/10"
+           style={{ paddingBottom: "56.25%" }}>
+        <iframe
+          className="absolute inset-0 w-full h-full"
+          src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+
+      {/* Continue button */}
+      <button
+        onClick={() => onNext(true)}
+        className="w-full py-4 rounded-2xl bg-green-500 text-white font-bold text-base hover:bg-green-400 active:scale-95 transition-all"
+      >
+        Продовжити ▶
+      </button>
+    </div>
+  );
+}
+
 // ── Progress bar ───────────────────────────────────────────────────────────────
 function ProgressBar({ current, total }: { current: number; total: number }) {
   return (
@@ -256,7 +296,7 @@ function LessonInner() {
       {/* Lesson title */}
       <div className="px-4 pb-4">
         <p className="text-xs text-white/40 uppercase tracking-widest">
-          {step.kind === "word" ? "Словник" : "Вправа"} · {content?.lesson.xpReward} XP
+          {step.kind === "word" ? "Словник" : step.exercise.type === "video" ? "Відео" : "Вправа"} · {content?.lesson.xpReward} XP
         </p>
         <h1 className="text-lg font-bold text-white">{content?.lesson.title}</h1>
       </div>
@@ -265,6 +305,8 @@ function LessonInner() {
       <div className="flex-1 flex items-center px-4 pb-8">
         {step.kind === "word" ? (
           <Flashcard key={stepIndex} word={step.word} onKnow={() => handleNext()} onAgain={handleAgain} />
+        ) : step.exercise.type === "video" ? (
+          <VideoCard key={stepIndex} exercise={step.exercise} onNext={handleNext} />
         ) : (
           <ExerciseCard key={stepIndex} exercise={step.exercise} onNext={handleNext} />
         )}

@@ -1,1 +1,1 @@
-fix: flashcard again button re-queues word at end of deck
+feat: YouTube video support in lesson player

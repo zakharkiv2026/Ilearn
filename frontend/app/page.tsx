@@ -278,27 +278,32 @@ function MobileMap() {
 // DESKTOP COMPONENTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-function UnitCard({ unit, section, icon, color, border, glow, progress, lessons }: {
+function UnitCard({ unit, section, icon, color, border, glow, progress, lessons, image }: {
   unit: number; section: string; icon: string; color: string; border: string; glow: string;
-  progress: number;
+  progress: number; image: string;
   lessons: { title: string; type: string; done?: boolean; locked?: boolean; active?: boolean }[];
 }) {
   const nextLesson = lessons.find(l => !l.done && !l.locked);
   return (
-    <div className={`rounded-3xl border ${border} overflow-hidden`}>
-      {/* Header */}
-      <div className={`${color} ${glow} p-5 flex items-center justify-between`}>
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-2xl">{icon}</div>
-          <div>
-            <div className="text-white/70 text-[10px] font-bold uppercase tracking-widest">{section}</div>
-            <div className="text-white font-black text-base">Юніт {unit}</div>
+    <div className={`rounded-3xl border ${border} overflow-hidden ${glow}`}>
+      {/* Header з фоновою картинкою */}
+      <div className="relative h-36 overflow-hidden">
+        <img src={image} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <div className={`absolute inset-0 ${color} opacity-75`} />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+        <div className="relative z-10 h-full flex items-end justify-between p-5">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl border border-white/20">{icon}</div>
+            <div>
+              <div className="text-white/70 text-[10px] font-bold uppercase tracking-widest">{section}</div>
+              <div className="text-white font-black text-lg drop-shadow-lg">Юніт {unit}</div>
+            </div>
           </div>
-        </div>
-        <div className="text-right">
-          <div className="text-white/60 text-xs mb-1">{progress}% виконано</div>
-          <div className="w-24 h-1.5 bg-white/20 rounded-full overflow-hidden">
-            <div className="h-full bg-white/70 rounded-full" style={{ width: `${progress}%` }} />
+          <div className="text-right">
+            <div className="text-white/70 text-xs mb-1">{progress}% виконано</div>
+            <div className="w-24 h-1.5 bg-white/20 rounded-full overflow-hidden">
+              <div className="h-full bg-white rounded-full" style={{ width: `${progress}%` }} />
+            </div>
           </div>
         </div>
       </div>
@@ -378,6 +383,7 @@ export default function Home() {
   const units = [
     {
       unit: 1, section: "Розділ 1", icon: "📝", progress: 40,
+      image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=80",
       color: "bg-gradient-to-r from-green-700/80 to-emerald-700/80",
       border: "border-green-500/25", glow: "shadow-[0_4px_24px_rgba(34,197,94,0.2)]",
       lessons: [
@@ -390,6 +396,7 @@ export default function Home() {
     },
     {
       unit: 2, section: "Розділ 1", icon: "🔢", progress: 0,
+      image: "https://images.unsplash.com/photo-1501139083538-0139583c060f?w=800&q=80",
       color: "bg-gradient-to-r from-blue-700/80 to-indigo-700/80",
       border: "border-blue-500/20", glow: "shadow-[0_4px_24px_rgba(59,130,246,0.15)]",
       lessons: [
@@ -401,6 +408,7 @@ export default function Home() {
     },
     {
       unit: 3, section: "Розділ 2", icon: "🍎", progress: 0,
+      image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80",
       color: "bg-gradient-to-r from-rose-700/80 to-pink-700/80",
       border: "border-rose-500/20", glow: "shadow-[0_4px_24px_rgba(244,63,94,0.15)]",
       lessons: [

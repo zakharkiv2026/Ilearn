@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git --version)",
+      "Bash(dotnet --version)",
+      "Bash(dotnet new:*)",
+      "Bash(npx create-next-app@latest frontend --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\")",
+      "Bash(npx create-next-app@latest frontend --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --no-react-compiler)",
+      "Bash(npx shadcn@latest init -d)",
+      "Bash(npx shadcn@latest add card chart)",
+      "Bash(gh auth:*)"
+    ]
+  }
+}

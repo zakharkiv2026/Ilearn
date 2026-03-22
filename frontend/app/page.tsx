@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { GoogleLogin } from "@react-oauth/google";
 import { getUnits, getUnitWithLessons, mapUnitToCard, type ApiUnit, loginWithGoogle, getMe, clearToken, setToken, getUserStats, type AuthUser, type UserStats } from "@/lib/api";
 
@@ -394,28 +395,24 @@ function StatWidget({ icon, value, label, sub, color }: {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Home() {
+  const router = useRouter();
+  const pathname = usePathname();
   const validTabs: Tab[] = ["learn", "practice", "leaderboard", "profile"];
 
-  const [tab, setTab] = useState<Tab>(() => {
-    if (typeof window === "undefined") return "learn";
-    const hash = window.location.hash.replace("#", "") as Tab;
-    return validTabs.includes(hash) ? hash : "learn";
-  });
+  const tabFromPath = (): Tab => {
+    const seg = pathname?.replace("/", "") as Tab;
+    return validTabs.includes(seg) ? seg : "learn";
+  };
+
+  const [tab, setTab] = useState<Tab>(tabFromPath);
+
+  // Sync when navigating with browser back/forward
+  useEffect(() => { setTab(tabFromPath()); }, [pathname]);
 
   function switchTab(t: Tab) {
     setTab(t);
-    window.location.hash = t;
+    router.push(t === "learn" ? "/" : `/${t}`);
   }
-
-  // Sync tab when user navigates with browser back/forward
-  useEffect(() => {
-    function onHashChange() {
-      const hash = window.location.hash.replace("#", "") as Tab;
-      if (validTabs.includes(hash)) setTab(hash);
-    }
-    window.addEventListener("hashchange", onHashChange);
-    return () => window.removeEventListener("hashchange", onHashChange);
-  }, []);
   const [mounted, setMounted] = useState(false);
   const [units, setUnits] = useState<ReturnType<typeof mapUnitToCard>[]>([]);
   const [rawUnits, setRawUnits] = useState<ApiUnit[]>([]);

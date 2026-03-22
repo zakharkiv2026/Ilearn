@@ -394,7 +394,12 @@ function StatWidget({ icon, value, label, sub, color }: {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Home() {
-  const [tab, setTab] = useState<Tab>("learn");
+  const [tab, setTab] = useState<Tab>(() => {
+    if (typeof window === "undefined") return "learn";
+    return (localStorage.getItem("ilearn_tab") as Tab) ?? "learn";
+  });
+
+  function switchTab(t: Tab) { setTab(t); localStorage.setItem("ilearn_tab", t); }
   const [mounted, setMounted] = useState(false);
   const [units, setUnits] = useState<ReturnType<typeof mapUnitToCard>[]>([]);
   const [rawUnits, setRawUnits] = useState<ApiUnit[]>([]);
@@ -494,7 +499,7 @@ export default function Home() {
 
           <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
             {navItems.map(n => (
-              <button key={n.id} onClick={() => setTab(n.id)}
+              <button key={n.id} onClick={() => switchTab(n.id)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all text-left
                   ${tab === n.id
                     ? "bg-green-500/20 text-green-300 border border-green-500/25"
@@ -636,7 +641,7 @@ export default function Home() {
                     <div className="bg-white/5 border border-white/10 rounded-3xl p-5">
                       <div className="flex items-center justify-between mb-3">
                         <div className="text-white font-bold text-sm">Рейтинг</div>
-                        <button onClick={() => setTab("leaderboard")} className="text-purple-400 text-xs hover:text-purple-300">Всі →</button>
+                        <button onClick={() => switchTab("leaderboard")} className="text-purple-400 text-xs hover:text-purple-300">Всі →</button>
                       </div>
                       <div className="space-y-1">
                         {leaderboard.slice(0, 5).map((r, i) => (
@@ -963,7 +968,7 @@ export default function Home() {
         <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/5 bg-[#0d0d1f]/95 backdrop-blur-xl">
           <div className="flex items-center justify-around px-2 pt-2 pb-6">
             {navItems.map(n => (
-              <button key={n.id} onClick={() => setTab(n.id)}
+              <button key={n.id} onClick={() => switchTab(n.id)}
                 className="flex flex-col items-center gap-1 px-3 py-1 transition-all active:scale-90">
                 <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl transition-all
                   ${tab === n.id ? "bg-green-500/20 shadow-[0_0_12px_rgba(34,197,94,0.3)]" : ""}`}>

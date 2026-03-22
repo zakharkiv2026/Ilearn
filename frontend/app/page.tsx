@@ -412,12 +412,6 @@ export default function Home() {
   }, []);
 
   function switchTab(t: Tab) {
-    // Protected tabs require login
-    if (t === "profile" && !user) {
-      sessionStorage.setItem("login_redirect", "/profile");
-      window.location.href = "/login";
-      return;
-    }
     const url = t === "learn" ? "/" : `/${t}`;
     history.pushState(null, "", url);
     setTab(t);
@@ -430,7 +424,7 @@ export default function Home() {
   const [authLoading, setAuthLoading] = useState(false);
   const [stats, setStats] = useState<UserStats | null>(null);
 
-  useEffect(() => { setMounted(true); }, []);
+  // mounted is set after auth check
 
   // Restore session on mount
   useEffect(() => {
@@ -441,7 +435,15 @@ export default function Home() {
       sessionStorage.removeItem("ilearn_user");
     }
     getMe().then(u => {
-      if (u) { setUser(u); getUserStats().then(s => setStats(s)); }
+      if (u) {
+        setUser(u);
+        getUserStats().then(s => setStats(s));
+        setMounted(true);
+      } else {
+        // Not logged in — redirect to login
+        sessionStorage.setItem("login_redirect", window.location.pathname);
+        window.location.href = "/login";
+      }
     });
   }, []);
 
@@ -503,7 +505,15 @@ export default function Home() {
     { id: "profile",     icon: "👤", label: "Профіль"  },
   ];
 
-  if (!mounted) return null;
+  // Show loading spinner while checking auth
+  if (!mounted) return (
+    <div className="min-h-screen bg-[#0d0d1f] flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <div className="text-4xl animate-bounce">🦉</div>
+        <div className="w-6 h-6 border-2 border-white/20 border-t-white/70 rounded-full animate-spin" />
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#0d0d1f] text-white">

@@ -193,6 +193,40 @@ app.MapGet("/api/users/me/stats", async (HttpContext ctx, AppDbContext db) =>
     });
 });
 
+// ── Leaderboard ───────────────────────────────────────────────────────────────
+
+app.MapGet("/api/leaderboard", async (HttpContext ctx, AppDbContext db) =>
+{
+    var currentUserId = GetUserId(ctx);
+
+    var rows = await db.UserLessons
+        .GroupBy(ul => ul.UserId)
+        .Select(g => new
+        {
+            UserId = g.Key,
+            Xp = g.Sum(ul => ul.Lesson!.XpReward),
+            CompletedLessons = g.Count(),
+        })
+        .OrderByDescending(r => r.Xp)
+        .Take(50)
+        .ToListAsync();
+
+    var userIds = rows.Select(r => r.UserId).ToList();
+    var users = await db.Users
+        .Where(u => userIds.Contains(u.Id))
+        .ToDictionaryAsync(u => u.Id);
+
+    return Results.Ok(rows.Select((r, i) => new
+    {
+        rank    = i + 1,
+        name    = users.TryGetValue(r.UserId, out var u) ? u.Name    : "?",
+        picture = users.TryGetValue(r.UserId, out var u2) ? u2.Picture : "",
+        xp      = r.Xp,
+        completedLessons = r.CompletedLessons,
+        isYou   = r.UserId == currentUserId,
+    }));
+});
+
 // ── Sections ─────────────────────────────────────────────────────────────────
 
 app.MapGet("/api/sections", async (AppDbContext db) =>

@@ -31,6 +31,15 @@ export async function loginWithGoogle(idToken: string): Promise<{ token: string 
   return res.json();
 }
 
+export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
+  const token = getToken();
+  const res = await fetch(`${BASE_URL}/api/leaderboard`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) return [];
+  return res.json();
+}
+
 export async function getUserStats(): Promise<UserStats | null> {
   const token = getToken();
   if (!token) return null;
@@ -52,6 +61,15 @@ export async function getMe(): Promise<AuthUser | null> {
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+
+export type LeaderboardEntry = {
+  rank: number;
+  name: string;
+  picture: string;
+  xp: number;
+  completedLessons: number;
+  isYou: boolean;
+};
 
 export type UserStats = {
   totalXp: number;

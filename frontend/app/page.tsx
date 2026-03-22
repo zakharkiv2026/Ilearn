@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { GoogleLogin } from "@react-oauth/google";
-import { getUnits, getUnitWithLessons, mapUnitToCard, type ApiUnit, loginWithGoogle, getMe, clearToken, setToken, getUserStats, type AuthUser, type UserStats } from "@/lib/api";
+import { getUnits, getUnitWithLessons, mapUnitToCard, type ApiUnit, loginWithGoogle, getMe, clearToken, setToken, getUserStats, getLeaderboard, type AuthUser, type UserStats, type LeaderboardEntry } from "@/lib/api";
 
 type Tab = "learn" | "practice" | "leaderboard" | "profile";
 
@@ -415,7 +415,19 @@ export default function Home() {
     const url = t === "learn" ? "/" : `/${t}`;
     history.pushState(null, "", url);
     setTab(t);
+    if (t === "leaderboard" && leaderboard.length === 0) {
+      setLeaderboardLoading(true);
+      getLeaderboard().then(d => { setLeaderboard(d); setLeaderboardLoading(false); });
+    }
   }
+
+  // Load leaderboard if landing directly on /leaderboard
+  useEffect(() => {
+    if (tab === "leaderboard") {
+      setLeaderboardLoading(true);
+      getLeaderboard().then(d => { setLeaderboard(d); setLeaderboardLoading(false); });
+    }
+  }, []);
   const [mounted, setMounted] = useState(false);
   const [units, setUnits] = useState<ReturnType<typeof mapUnitToCard>[]>([]);
   const [rawUnits, setRawUnits] = useState<ApiUnit[]>([]);
@@ -423,6 +435,8 @@ export default function Home() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
   const [stats, setStats] = useState<UserStats | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
 
   // mounted is set after auth check
 
@@ -488,15 +502,6 @@ export default function Home() {
   const nextLvlXp = stats?.nextLevelXp   ?? 100;
   const dailyXp   = stats?.currentLevelXp ?? 0;
   const dailyGoal = stats?.nextLevelXp   ?? 100;
-
-  const leaderboard = [
-    { name: "Sophia", xp: 4820 },
-    { name: "Marcus", xp: 4210 },
-    { name: "Yuki",   xp: 3950 },
-    { name: "Andriy", xp: 3400, isYou: true },
-    { name: "Pablo",  xp: 2980 },
-    { name: "Emma",   xp: 2650 },
-  ];
 
   const navItems: { id: Tab; icon: string; label: string }[] = [
     { id: "learn",       icon: "🏠", label: "Вчити"    },
@@ -684,12 +689,17 @@ export default function Home() {
                         <button onClick={() => switchTab("leaderboard")} className="text-purple-400 text-xs hover:text-purple-300">Всі →</button>
                       </div>
                       <div className="space-y-1">
-                        {leaderboard.slice(0, 5).map((r, i) => (
+                        {leaderboard.length === 0 ? (
+                          <div className="text-white/30 text-xs text-center py-3">Ще немає гравців</div>
+                        ) : leaderboard.slice(0, 5).map((r, i) => (
                           <div key={i} className={`flex items-center gap-2.5 p-2 rounded-xl transition-all ${r.isYou ? "bg-purple-500/15 border border-purple-500/20" : "hover:bg-white/5"}`}>
                             <div className="w-5 text-center text-xs">
                               {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : <span className="text-white/30 font-bold">{i+1}</span>}
                             </div>
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-[10px] font-black">{r.name[0]}</div>
+                            {r.picture
+                              ? <img src={r.picture} alt="" className="w-6 h-6 rounded-full object-cover" />
+                              : <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-[10px] font-black">{r.name[0]}</div>
+                            }
                             <div className="flex-1 text-xs font-semibold truncate">
                               {r.name} {r.isYou && <span className="text-purple-400">(ти)</span>}
                             </div>
@@ -743,43 +753,68 @@ export default function Home() {
               {tab === "leaderboard" && (
                 <div className="max-w-2xl mx-auto">
                   <div className="mb-6">
-                    <div className="text-2xl font-black">Тижневий рейтинг 🏆</div>
-                    <div className="text-white/40 mt-1">Скидається в понеділок · Топ-3 отримують бонус 💎</div>
+                    <div className="text-2xl font-black">Рейтинг гравців 🏆</div>
+                    <div className="text-white/40 mt-1">Загальний рейтинг · Топ-3 отримують бонус 💎</div>
                   </div>
-                  {/* Podium */}
-                  <div className="flex items-end justify-center gap-4 mb-6">
-                    {[leaderboard[1], leaderboard[0], leaderboard[2]].map((r, i) => {
-                      const h = ["h-24", "h-32", "h-20"];
-                      const c = ["bg-gray-500/20 border-gray-400/20", "bg-yellow-500/20 border-yellow-400/30", "bg-orange-500/15 border-orange-400/20"];
-                      const m = ["🥈","🥇","🥉"];
-                      return (
-                        <div key={i} className={`flex-1 flex flex-col items-center gap-2 ${h[i]} rounded-2xl border ${c[i]} justify-end pb-4`}>
-                          <span className="text-2xl">{m[i]}</span>
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center font-bold">{r.name[0]}</div>
-                          <div className="text-white text-sm font-bold">{r.name}</div>
-                          <div className="text-white/40 text-xs">{r.xp.toLocaleString()} XP</div>
+
+                  {leaderboardLoading ? (
+                    <div className="flex justify-center py-20">
+                      <div className="w-8 h-8 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+                    </div>
+                  ) : leaderboard.length === 0 ? (
+                    <div className="text-center py-20 text-white/30">
+                      <div className="text-4xl mb-3">🏆</div>
+                      <div>Ще немає гравців у рейтингу</div>
+                      <div className="text-sm mt-1">Пройди перший урок щоб потрапити сюди!</div>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Podium — top 3 */}
+                      {leaderboard.length >= 3 && (
+                        <div className="flex items-end justify-center gap-4 mb-6">
+                          {[leaderboard[1], leaderboard[0], leaderboard[2]].map((r, i) => {
+                            const h = ["h-24","h-32","h-20"];
+                            const c = ["bg-gray-500/20 border-gray-400/20","bg-yellow-500/20 border-yellow-400/30","bg-orange-500/15 border-orange-400/20"];
+                            const m = ["🥈","🥇","🥉"];
+                            return (
+                              <div key={i} className={`flex-1 flex flex-col items-center gap-2 ${h[i]} rounded-2xl border ${c[i]} justify-end pb-4 ${r.isYou ? "ring-2 ring-purple-400/40" : ""}`}>
+                                <span className="text-2xl">{m[i]}</span>
+                                {r.picture
+                                  ? <img src={r.picture} alt="" className="w-10 h-10 rounded-full object-cover" />
+                                  : <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center font-bold">{r.name[0]}</div>
+                                }
+                                <div className="text-white text-xs font-bold text-center px-1 truncate w-full text-center">{r.name.split(" ")[0]}</div>
+                                <div className="text-white/40 text-xs">{r.xp.toLocaleString()} XP</div>
+                              </div>
+                            );
+                          })}
                         </div>
-                      );
-                    })}
-                  </div>
-                  <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden">
-                    {leaderboard.map((r, i) => (
-                      <div key={i} className={`flex items-center gap-3 px-5 py-3.5 border-b border-white/5 last:border-0 transition-all
-                        ${r.isYou ? "bg-purple-500/15" : "hover:bg-white/5"}`}>
-                        <div className="w-6 text-center">{i===0?"🥇":i===1?"🥈":i===2?"🥉":<span className="text-white/30 text-sm font-bold">{i+1}</span>}</div>
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center font-bold">{r.name[0]}</div>
-                        <div className="flex-1">
-                          <div className={`font-semibold text-sm ${r.isYou ? "text-purple-300" : "text-white"}`}>
-                            {r.name} {r.isYou && <span className="text-xs bg-purple-500/30 text-purple-300 px-1.5 py-0.5 rounded-full ml-1">ти</span>}
+                      )}
+
+                      {/* Full list */}
+                      <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden">
+                        {leaderboard.map((r, i) => (
+                          <div key={i} className={`flex items-center gap-3 px-5 py-3.5 border-b border-white/5 last:border-0 transition-all
+                            ${r.isYou ? "bg-purple-500/15" : "hover:bg-white/5"}`}>
+                            <div className="w-6 text-center">{i===0?"🥇":i===1?"🥈":i===2?"🥉":<span className="text-white/30 text-sm font-bold">{i+1}</span>}</div>
+                            {r.picture
+                              ? <img src={r.picture} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                              : <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center font-bold flex-shrink-0">{r.name[0]}</div>
+                            }
+                            <div className="flex-1 min-w-0">
+                              <div className={`font-semibold text-sm truncate ${r.isYou ? "text-purple-300" : "text-white"}`}>
+                                {r.name} {r.isYou && <span className="text-xs bg-purple-500/30 text-purple-300 px-1.5 py-0.5 rounded-full ml-1">ти</span>}
+                              </div>
+                              <div className="text-white/30 text-xs">{r.completedLessons} уроків · {r.xp.toLocaleString()} XP</div>
+                            </div>
+                            <div className="w-24 hidden sm:block">
+                              <XpBar current={r.xp} max={Math.max(...leaderboard.map(x => x.xp), 1)} />
+                            </div>
                           </div>
-                          <div className="text-white/30 text-xs">{r.xp.toLocaleString()} XP цього тижня</div>
-                        </div>
-                        <div className="w-28 hidden sm:block">
-                          <XpBar current={r.xp} max={5000} />
-                        </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </>
+                  )}
                 </div>
               )}
 
@@ -931,20 +966,35 @@ export default function Home() {
           {tab === "leaderboard" && (
             <div className="px-4 py-4 space-y-3">
               <div className="text-xl font-black pt-2 pb-1">Рейтинг 🏆</div>
-              <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden">
-                {leaderboard.map((r,i) => (
-                  <div key={i} className={`flex items-center gap-3 px-4 py-3.5 border-b border-white/5 last:border-0 ${r.isYou?"bg-purple-500/15":""}`}>
-                    <div className="w-6 text-center text-sm">{i===0?"🥇":i===1?"🥈":i===2?"🥉":<span className="text-white/30 font-bold text-xs">{i+1}</span>}</div>
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-xs font-bold">{r.name[0]}</div>
-                    <div className="flex-1">
-                      <div className={`text-sm font-semibold ${r.isYou?"text-purple-300":"text-white"}`}>
-                        {r.name} {r.isYou&&<span className="text-[10px] text-purple-400">(ти)</span>}
+              {leaderboardLoading ? (
+                <div className="flex justify-center py-16">
+                  <div className="w-7 h-7 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+                </div>
+              ) : leaderboard.length === 0 ? (
+                <div className="text-center py-16 text-white/30">
+                  <div className="text-4xl mb-3">🏆</div>
+                  <div className="text-sm">Ще немає гравців</div>
+                  <div className="text-xs mt-1">Пройди урок щоб потрапити сюди!</div>
+                </div>
+              ) : (
+                <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden">
+                  {leaderboard.map((r,i) => (
+                    <div key={i} className={`flex items-center gap-3 px-4 py-3.5 border-b border-white/5 last:border-0 ${r.isYou?"bg-purple-500/15":""}`}>
+                      <div className="w-6 text-center text-sm">{i===0?"🥇":i===1?"🥈":i===2?"🥉":<span className="text-white/30 font-bold text-xs">{i+1}</span>}</div>
+                      {r.picture
+                        ? <img src={r.picture} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                        : <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-xs font-bold flex-shrink-0">{r.name[0]}</div>
+                      }
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-sm font-semibold truncate ${r.isYou?"text-purple-300":"text-white"}`}>
+                          {r.name} {r.isYou&&<span className="text-[10px] text-purple-400">(ти)</span>}
+                        </div>
+                        <div className="text-white/30 text-xs">{r.completedLessons} уроків · {r.xp.toLocaleString()} XP</div>
                       </div>
-                      <div className="text-white/30 text-xs">{r.xp.toLocaleString()} XP</div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

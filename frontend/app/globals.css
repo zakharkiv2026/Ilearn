@@ -123,10 +123,44 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Завжди резервуємо місце під скролбар — контент не зсувається */
+    scrollbar-gutter: stable;
+    overflow-y: scroll;
   }
   html {
     @apply font-sans;
   }
+}
+
+/* ── Кастомний скролбар ──────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  transition: background 0.2s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
 }
 
 /* ── Owl App Animations ──────────────────────────────────────────── */

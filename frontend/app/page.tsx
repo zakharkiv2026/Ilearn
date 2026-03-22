@@ -4,7 +4,19 @@ import { useState, useEffect } from "react";
 
 type Tab = "learn" | "practice" | "leaderboard" | "profile";
 
-// ── Progress Ring ────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function XpBar({ current, max, color = "from-yellow-400 to-orange-400" }: {
+  current: number; max: number; color?: string;
+}) {
+  return (
+    <div className="h-2.5 bg-white/10 rounded-full overflow-hidden">
+      <div className={`h-full bg-gradient-to-r ${color} rounded-full transition-all duration-1000`}
+        style={{ width: `${Math.min((current / max) * 100, 100)}%` }} />
+    </div>
+  );
+}
+
 function ProgressRing({ pct, size = 64, stroke = 6, color = "#22c55e" }: {
   pct: number; size?: number; stroke?: number; color?: string;
 }) {
@@ -12,7 +24,7 @@ function ProgressRing({ pct, size = 64, stroke = 6, color = "#22c55e" }: {
   const circ = 2 * Math.PI * r;
   return (
     <svg width={size} height={size} className="-rotate-90">
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth={stroke} />
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={stroke} />
       <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
         strokeDasharray={`${circ * pct} ${circ}`} strokeLinecap="round"
         style={{ transition: "stroke-dasharray 1s ease" }} />
@@ -20,17 +32,8 @@ function ProgressRing({ pct, size = 64, stroke = 6, color = "#22c55e" }: {
   );
 }
 
-function XpBar({ current, max }: { current: number; max: number }) {
-  return (
-    <div className="h-2.5 bg-white/10 rounded-full overflow-hidden">
-      <div className="h-full bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full transition-all duration-1000"
-        style={{ width: `${Math.min((current / max) * 100, 100)}%` }} />
-    </div>
-  );
-}
-
-// ── Owl SVG ──────────────────────────────────────────────────────────────────
-function Owl({ size = 80 }: { size?: number }) {
+// ── Owl ───────────────────────────────────────────────────────────────────────
+function Owl({ size = 40 }: { size?: number }) {
   return (
     <svg width={size} height={size * 1.15} viewBox="0 0 120 140" fill="none">
       <ellipse cx="60" cy="90" rx="38" ry="42" fill="#4B5563" />
@@ -42,258 +45,151 @@ function Owl({ size = 80 }: { size?: number }) {
       <ellipse cx="43" cy="33" rx="7" ry="10" fill="#4B5563" transform="rotate(-20 43 33)" />
       <ellipse cx="77" cy="33" rx="7" ry="10" fill="#4B5563" transform="rotate(20 77 33)" />
       <ellipse cx="60" cy="60" rx="22" ry="20" fill="#E5E7EB" />
-      <circle cx="50" cy="56" r="10" fill="white" />
-      <circle cx="50" cy="56" r="7" fill="#2563EB" />
-      <circle cx="50" cy="56" r="3" fill="#1E3A8A" />
-      <circle cx="47" cy="53" r="1.5" fill="white" />
-      <circle cx="70" cy="56" r="10" fill="white" />
-      <circle cx="70" cy="56" r="7" fill="#2563EB" />
-      <circle cx="70" cy="56" r="3" fill="#1E3A8A" />
-      <circle cx="67" cy="53" r="1.5" fill="white" />
+      <circle cx="50" cy="56" r="10" fill="white" /><circle cx="50" cy="56" r="7" fill="#2563EB" />
+      <circle cx="50" cy="56" r="3" fill="#1E3A8A" /><circle cx="47" cy="53" r="1.5" fill="white" />
+      <circle cx="70" cy="56" r="10" fill="white" /><circle cx="70" cy="56" r="7" fill="#2563EB" />
+      <circle cx="70" cy="56" r="3" fill="#1E3A8A" /><circle cx="67" cy="53" r="1.5" fill="white" />
       <polygon points="60,65 54,72 66,72" fill="#F59E0B" />
     </svg>
   );
 }
 
-// ── Map Node ─────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// MOBILE COMPONENTS (Duolingo map)
+// ─────────────────────────────────────────────────────────────────────────────
+
 type NodeStatus = "done" | "active" | "locked";
 
-function MapNode({
-  status, icon, label, x, isOwl = false,
-}: {
-  status: NodeStatus; icon: string; label: string; x: string; isOwl?: boolean;
-}) {
-  const [showTooltip, setShowTooltip] = useState(false);
-
+function MapNode({ status, icon, label }: { status: NodeStatus; icon: string; label: string }) {
+  const [tip, setTip] = useState(false);
   return (
-    <div className="relative flex flex-col items-center" style={{ marginLeft: x }}>
-
-      {/* Tooltip */}
-      {showTooltip && status !== "locked" && (
-        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white text-gray-900 text-xs font-bold px-3 py-1.5 rounded-xl shadow-xl whitespace-nowrap z-50">
+    <div className="relative flex flex-col items-center">
+      {tip && status !== "locked" && (
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-white text-gray-900 text-xs font-bold px-3 py-1.5 rounded-xl shadow-xl whitespace-nowrap z-50">
           {label}
           <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-white" />
         </div>
       )}
-
-      {/* Node button */}
       <button
         disabled={status === "locked"}
-        onMouseEnter={() => setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
-        onFocus={() => setShowTooltip(true)}
-        onBlur={() => setShowTooltip(false)}
-        className={`relative transition-all active:scale-90 ${status === "locked" ? "cursor-not-allowed" : "cursor-pointer hover:scale-105"}`}
+        onMouseEnter={() => setTip(true)} onMouseLeave={() => setTip(false)}
+        className={`relative transition-all ${status !== "locked" ? "hover:scale-105 active:scale-90" : "cursor-not-allowed"}`}
       >
-        {/* Pulse rings for active */}
         {status === "active" && (
           <>
             <div className="absolute inset-0 rounded-full border-4 border-green-400/30 animate-ping scale-150" />
             <div className="absolute inset-0 rounded-full border-4 border-green-400/40 scale-125" />
           </>
         )}
-
-        {/* Main circle */}
-        <div className={`
-          w-16 h-16 rounded-full flex items-center justify-center text-2xl relative z-10
-          shadow-[0_6px_0px_rgba(0,0,0,0.3)]
-          ${status === "done"    ? "bg-green-500 shadow-[0_6px_0px_#15803d]" : ""}
-          ${status === "active"  ? "bg-green-400 shadow-[0_6px_0px_#16a34a] ring-4 ring-white/30" : ""}
-          ${status === "locked"  ? "bg-[#374151] shadow-[0_6px_0px_#1f2937]" : ""}
+        <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl relative z-10
+          ${status === "done"   ? "bg-green-500 shadow-[0_6px_0_#15803d]" : ""}
+          ${status === "active" ? "bg-green-400 shadow-[0_6px_0_#16a34a] ring-4 ring-white/25" : ""}
+          ${status === "locked" ? "bg-[#374151] shadow-[0_6px_0_#1f2937]" : ""}
         `}>
-          {status === "done"   && <span className="text-white text-2xl font-black">★</span>}
-          {status === "active" && <span className="text-3xl">{icon}</span>}
-          {status === "locked" && <span className="text-xl opacity-40">🔒</span>}
+          {status === "done"   && <span className="text-white font-black text-2xl">★</span>}
+          {status === "active" && <span>{icon}</span>}
+          {status === "locked" && <span className="opacity-40 text-xl">🔒</span>}
         </div>
       </button>
-
-      {/* Stars below done nodes */}
       {status === "done" && (
-        <div className="flex gap-0.5 mt-1.5">
-          {[0,1,2].map(i => <span key={i} className="text-yellow-400 text-xs">★</span>)}
-        </div>
+        <div className="flex gap-0.5 mt-1.5">{[0,1,2].map(i => <span key={i} className="text-yellow-400 text-xs">★</span>)}</div>
       )}
-
-      {/* START label */}
-      {status === "active" && !isOwl && (
-        <div className="mt-1.5 bg-yellow-400 text-yellow-900 text-[10px] font-black px-2.5 py-0.5 rounded-full">
-          START
-        </div>
+      {status === "active" && (
+        <div className="mt-1.5 bg-yellow-400 text-yellow-900 text-[10px] font-black px-2.5 py-0.5 rounded-full">START</div>
       )}
     </div>
   );
 }
 
-// ── Section Banner ────────────────────────────────────────────────────────────
-function SectionBanner({
-  section, title, color, glow, icon,
-}: {
-  section: string; title: string; color: string; glow: string; icon: string;
-}) {
-  return (
-    <div className={`w-full max-w-sm mx-auto rounded-2xl p-4 ${color} ${glow} border border-white/10 flex items-center justify-between`}>
-      <div>
-        <div className="text-white/70 text-[10px] font-bold uppercase tracking-widest">{section}</div>
-        <div className="text-white font-black text-base mt-0.5">{title}</div>
-      </div>
-      <div className="text-3xl">{icon}</div>
-    </div>
-  );
-}
-
-// ── Chest (section reward) ───────────────────────────────────────────────────
-function ChestNode({ locked }: { locked?: boolean }) {
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl
-        shadow-[0_6px_0px_rgba(0,0,0,0.3)] transition-all
-        ${locked ? "bg-[#374151] opacity-40" : "bg-gradient-to-b from-yellow-400 to-orange-500 shadow-[0_6px_0px_#b45309] hover:scale-105 cursor-pointer"}
-      `}>
-        🎁
-      </div>
-      {!locked && <div className="text-yellow-400 text-[10px] font-bold">+50 gems</div>}
-    </div>
-  );
-}
-
-// ── The Duolingo-style Map ───────────────────────────────────────────────────
-function LearningMap() {
-  // Node definition: status, icon, label, xOffset from center
-  // xOffset: negative = left, positive = right, 0 = center
-  // The container is 320px wide, center = 160px
-
-  type MapItem =
-    | { type: "banner"; section: string; title: string; color: string; glow: string; icon: string }
-    | { type: "node"; status: NodeStatus; icon: string; label: string; col: number; isOwl?: boolean }
-    | { type: "chest"; locked?: boolean };
-
-  const mapItems: MapItem[] = [
-    { type: "banner", section: "Section 1, Unit 1", title: "Form basic sentences", color: "bg-green-700/80", glow: "shadow-[0_4px_20px_rgba(34,197,94,0.3)]", icon: "📝" },
-    { type: "node", status: "done",   icon: "📝", label: "Basic greetings",     col: 2, isOwl: false },
-    { type: "node", status: "done",   icon: "👋", label: "Say hello & goodbye", col: 3, isOwl: false },
-    { type: "node", status: "active", icon: "🗣️", label: "Introduce yourself",  col: 2, isOwl: true  },
-    { type: "node", status: "locked", icon: "❓", label: "Ask simple questions", col: 1, isOwl: false },
-    { type: "node", status: "locked", icon: "💬", label: "Answer about yourself", col: 0, isOwl: false },
+function MobileMap() {
+  const items: Array<
+    | { type: "banner"; label: string; title: string; color: string; icon: string }
+    | { type: "node"; status: NodeStatus; icon: string; label: string; col: number }
+    | { type: "chest"; locked?: boolean }
+  > = [
+    { type: "banner", label: "Section 1 · Unit 1", title: "Form basic sentences", color: "bg-green-700/90", icon: "📝" },
+    { type: "node", status: "done",   icon: "📝", label: "Basic greetings",      col: 2 },
+    { type: "node", status: "done",   icon: "👋", label: "Say hello & goodbye",  col: 3 },
+    { type: "node", status: "active", icon: "🗣️", label: "Introduce yourself",   col: 2 },
+    { type: "node", status: "locked", icon: "❓", label: "Ask questions",         col: 1 },
+    { type: "node", status: "locked", icon: "💬", label: "Answer about yourself", col: 0 },
     { type: "chest", locked: false },
-
-    { type: "banner", section: "Section 1, Unit 2", title: "Numbers & time", color: "bg-blue-700/80", glow: "shadow-[0_4px_20px_rgba(59,130,246,0.3)]", icon: "🔢" },
-    { type: "node", status: "locked", icon: "🔢", label: "Numbers 1–10",   col: 2, isOwl: false },
-    { type: "node", status: "locked", icon: "⏰", label: "Tell the time",   col: 3, isOwl: false },
-    { type: "node", status: "locked", icon: "📅", label: "Dates & calendar", col: 2, isOwl: false },
-    { type: "node", status: "locked", icon: "🔢", label: "Count objects",   col: 1, isOwl: false },
+    { type: "banner", label: "Section 1 · Unit 2", title: "Numbers & time", color: "bg-blue-700/90", icon: "🔢" },
+    { type: "node", status: "locked", icon: "🔢", label: "Numbers 1–10",    col: 2 },
+    { type: "node", status: "locked", icon: "⏰", label: "Tell the time",    col: 3 },
+    { type: "node", status: "locked", icon: "📅", label: "Dates & calendar", col: 2 },
+    { type: "node", status: "locked", icon: "🧮", label: "Count objects",    col: 1 },
     { type: "chest", locked: true },
-
-    { type: "banner", section: "Section 2, Unit 1", title: "Food & daily life", color: "bg-rose-700/80", glow: "shadow-[0_4px_20px_rgba(244,63,94,0.3)]", icon: "🍎" },
-    { type: "node", status: "locked", icon: "🍎", label: "Food & drinks",        col: 2, isOwl: false },
-    { type: "node", status: "locked", icon: "🍽️", label: "Order at a restaurant", col: 3, isOwl: false },
-    { type: "node", status: "locked", icon: "🥗", label: "Express preferences",   col: 2, isOwl: false },
-    { type: "node", status: "locked", icon: "🛒", label: "Shopping vocabulary",   col: 1, isOwl: false },
+    { type: "banner", label: "Section 2 · Unit 1", title: "Food & daily life", color: "bg-rose-700/90", icon: "🍎" },
+    { type: "node", status: "locked", icon: "🍎", label: "Food & drinks",          col: 2 },
+    { type: "node", status: "locked", icon: "🍽️", label: "Order at restaurant",    col: 3 },
+    { type: "node", status: "locked", icon: "🛒", label: "Shopping vocabulary",    col: 2 },
+    { type: "node", status: "locked", icon: "💳", label: "Paying & prices",        col: 1 },
     { type: "chest", locked: true },
   ];
 
-  // Column → left offset mapping (5 columns: 0=far-left, 1=left, 2=center, 3=right, 4=far-right)
-  const colToOffset: Record<number, string> = {
-    0: "40px",
-    1: "80px",
-    2: "128px",
-    3: "176px",
-    4: "216px",
-  };
+  const colPad: Record<number, string> = { 0: "32px", 1: "72px", 2: "120px", 3: "168px", 4: "208px" };
+  const colCx:  Record<number, number> = { 0: 64,     1: 104,    2: 152,     3: 200,     4: 240    };
 
-  // Build SVG path connecting node centers
-  // We'll compute approximate path based on node sequence
-  const nodeItems = mapItems.filter(i => i.type === "node") as Extract<MapItem, { type: "node" }>[];
-  const colToCx: Record<number, number> = { 0: 72, 1: 112, 2: 160, 3: 208, 4: 248 };
-
-  // We need to figure out vertical positions. Each group of items between banners takes space.
-  // Let's just draw a winding path by connecting node cx values
-  // We'll estimate y positions:
-  // banners take 80px, nodes take 100px, chests take 80px
-  let pathPoints: [number, number][] = [];
-  let y = 90; // start below first banner
-  for (const item of mapItems) {
-    if (item.type === "banner") { y += 80; }
-    else if (item.type === "node") {
-      const n = item as Extract<MapItem, { type: "node" }>;
-      pathPoints.push([colToCx[n.col], y]);
-      y += 100;
-    } else if (item.type === "chest") {
-      y += 80;
-    }
+  let pts: [number, number][] = [];
+  let y = 80;
+  for (const item of items) {
+    if (item.type === "banner")      y += 80;
+    else if (item.type === "node")  { pts.push([colCx[item.col], y]); y += 96; }
+    else if (item.type === "chest")  y += 80;
   }
 
-  // Build smooth SVG path through points
-  function buildPath(pts: [number, number][]) {
+  function makePath(pts: [number, number][]) {
     if (pts.length < 2) return "";
     let d = `M${pts[0][0]},${pts[0][1]}`;
     for (let i = 1; i < pts.length; i++) {
-      const [x1, y1] = pts[i - 1];
-      const [x2, y2] = pts[i];
+      const [x1, y1] = pts[i-1], [x2, y2] = pts[i];
       const cy = (y1 + y2) / 2;
       d += ` C${x1},${cy} ${x2},${cy} ${x2},${y2}`;
     }
     return d;
   }
 
-  const pathD = buildPath(pathPoints);
   const totalH = y + 40;
+  const pathD = makePath(pts);
 
   return (
     <div className="relative w-full max-w-xs mx-auto" style={{ minHeight: totalH }}>
-      {/* SVG path behind everything */}
-      <svg
-        className="absolute inset-0 w-full pointer-events-none"
-        style={{ height: totalH }}
-        viewBox={`0 0 320 ${totalH}`}
-        preserveAspectRatio="xMidYMid meet"
-      >
-        <defs>
-          <filter id="pathglow">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
-        </defs>
-        {/* Shadow path */}
-        <path d={pathD} stroke="#052e16" strokeWidth="20" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        {/* Main green path */}
-        <path d={pathD} stroke="#16a34a" strokeWidth="16" fill="none" strokeLinecap="round" strokeLinejoin="round" filter="url(#pathglow)" />
-        {/* Light green highlight */}
-        <path d={pathD} stroke="#4ade80" strokeWidth="6" fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.5" />
-        {/* Dashes */}
-        <path d={pathD} stroke="#bbf7d0" strokeWidth="3" fill="none" strokeLinecap="round"
-          strokeDasharray="1 20" opacity="0.6" />
+      <svg className="absolute inset-0 w-full pointer-events-none" style={{ height: totalH }}
+        viewBox={`0 0 320 ${totalH}`} preserveAspectRatio="xMidYMid meet">
+        <path d={pathD} stroke="#052e16" strokeWidth="20" fill="none" strokeLinecap="round" />
+        <path d={pathD} stroke="#16a34a" strokeWidth="16" fill="none" strokeLinecap="round" />
+        <path d={pathD} stroke="#4ade80" strokeWidth="6"  fill="none" strokeLinecap="round" opacity="0.5" />
+        <path d={pathD} stroke="#bbf7d0" strokeWidth="3"  fill="none" strokeLinecap="round"
+          strokeDasharray="1 20" opacity="0.7" />
       </svg>
 
-      {/* Items */}
-      <div className="relative flex flex-col items-stretch gap-0 pt-4">
-        {mapItems.map((item, i) => {
-          if (item.type === "banner") {
-            return (
-              <div key={i} className="py-4 px-2">
-                <SectionBanner {...item} />
+      <div className="relative flex flex-col pt-4">
+        {items.map((item, i) => {
+          if (item.type === "banner") return (
+            <div key={i} className="py-4 px-3">
+              <div className={`${item.color} rounded-2xl px-4 py-3 flex items-center justify-between border border-white/10`}>
+                <div>
+                  <div className="text-white/60 text-[10px] font-bold uppercase tracking-widest">{item.label}</div>
+                  <div className="text-white font-black text-sm mt-0.5">{item.title}</div>
+                </div>
+                <span className="text-2xl">{item.icon}</span>
               </div>
-            );
-          }
-          if (item.type === "node") {
-            return (
-              <div key={i} className="py-4 flex" style={{ paddingLeft: colToOffset[item.col] }}>
-                <MapNode
-                  status={item.status}
-                  icon={item.icon}
-                  label={item.label}
-                  x={colToOffset[item.col]}
-                  isOwl={item.isOwl}
-                />
+            </div>
+          );
+          if (item.type === "node") return (
+            <div key={i} className="py-3 flex" style={{ paddingLeft: colPad[item.col] }}>
+              <MapNode status={item.status} icon={item.icon} label={item.label} />
+            </div>
+          );
+          if (item.type === "chest") return (
+            <div key={i} className="py-4 flex justify-center">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-[0_6px_0_rgba(0,0,0,0.3)]
+                ${item.locked ? "bg-[#374151] opacity-40" : "bg-gradient-to-b from-yellow-400 to-orange-500 shadow-[0_6px_0_#b45309] cursor-pointer hover:scale-105 transition-all"}`}>
+                🎁
               </div>
-            );
-          }
-          if (item.type === "chest") {
-            return (
-              <div key={i} className="py-4 flex justify-center">
-                <ChestNode locked={item.locked} />
-              </div>
-            );
-          }
+            </div>
+          );
           return null;
         })}
       </div>
@@ -301,111 +197,143 @@ function LearningMap() {
   );
 }
 
-// ── Sidebar Widgets ───────────────────────────────────────────────────────────
-function StreakCard({ streak }: { streak: number }) {
-  const days = ["M", "T", "W", "T", "F", "S", "S"];
-  const today = new Date().getDay();
-  const adj = today === 0 ? 6 : today - 1;
+// ─────────────────────────────────────────────────────────────────────────────
+// DESKTOP COMPONENTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+function UnitCard({ unit, section, icon, color, border, glow, progress, lessons }: {
+  unit: number; section: string; icon: string; color: string; border: string; glow: string;
+  progress: number;
+  lessons: { title: string; type: string; done?: boolean; locked?: boolean; active?: boolean }[];
+}) {
+  const nextLesson = lessons.find(l => !l.done && !l.locked);
   return (
-    <div className="bg-gradient-to-br from-orange-500 to-rose-500 rounded-3xl p-5 shadow-[0_8px_32px_rgba(249,115,22,0.35)]">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <div className="text-white/70 text-[10px] font-bold uppercase tracking-widest">Current Streak</div>
-          <div className="text-white text-3xl font-black mt-0.5">{streak} 🔥</div>
-          <div className="text-orange-100/70 text-xs mt-0.5">days in a row</div>
-        </div>
-        <div className="text-5xl opacity-20">🔥</div>
-      </div>
-      <div className="flex gap-1">
-        {days.map((d, i) => (
-          <div key={i} className="flex-1 flex flex-col items-center gap-1">
-            <div className="text-orange-100/60 text-[9px] font-bold">{d}</div>
-            <div className={`w-full aspect-square rounded-lg flex items-center justify-center text-xs transition-all ${
-              i < adj ? "bg-white/25 text-white" :
-              i === adj ? "bg-white text-orange-500 shadow-[0_0_10px_rgba(255,255,255,0.5)]" :
-              "bg-white/10 text-white/20"
-            }`}>
-              {i <= adj ? "✓" : "·"}
-            </div>
+    <div className={`rounded-3xl border ${border} overflow-hidden`}>
+      {/* Header */}
+      <div className={`${color} ${glow} p-5 flex items-center justify-between`}>
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-2xl">{icon}</div>
+          <div>
+            <div className="text-white/70 text-[10px] font-bold uppercase tracking-widest">{section}</div>
+            <div className="text-white font-black text-base">Unit {unit}</div>
           </div>
+        </div>
+        <div className="text-right">
+          <div className="text-white/60 text-xs mb-1">{progress}% complete</div>
+          <div className="w-24 h-1.5 bg-white/20 rounded-full overflow-hidden">
+            <div className="h-full bg-white/70 rounded-full" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Lessons grid */}
+      <div className="p-4 grid grid-cols-1 xl:grid-cols-2 gap-2">
+        {lessons.map((l, i) => (
+          <button key={i} disabled={l.locked}
+            className={`flex items-center gap-3 p-3 rounded-xl text-left transition-all
+              ${l.done   ? "bg-green-500/10 border border-green-500/20 hover:bg-green-500/15" : ""}
+              ${l.active ? "bg-white/10 border border-white/20 hover:bg-white/15" : ""}
+              ${l.locked ? "bg-white/3 border border-white/5 opacity-40 cursor-not-allowed" : ""}
+              ${!l.done && !l.active && !l.locked ? "bg-white/5 border border-white/10 hover:bg-white/10" : ""}
+            `}>
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm flex-shrink-0
+              ${l.done ? "bg-green-500" : l.active ? "bg-white/20" : "bg-white/10"}`}>
+              {l.done ? "✓" : l.locked ? "🔒" : "▶"}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className={`text-sm font-semibold truncate ${l.done ? "text-white/60" : l.locked ? "text-white/25" : "text-white"}`}>
+                {l.title}
+              </div>
+              <div className="text-white/30 text-xs">{l.type}</div>
+            </div>
+            {!l.locked && (
+              <div className={`text-xs font-bold flex-shrink-0 ${l.done ? "text-green-400" : "text-white/30"}`}>
+                {l.done ? "+10 XP ✓" : "+10 XP"}
+              </div>
+            )}
+          </button>
         ))}
       </div>
-    </div>
-  );
-}
 
-function DailyGoalCard({ xp, goal }: { xp: number; goal: number }) {
-  const pct = Math.min(xp / goal, 1);
-  const done = pct >= 1;
-  return (
-    <div className={`rounded-3xl p-5 border ${done ? "bg-green-500/15 border-green-500/30" : "bg-white/5 border-white/10"}`}>
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <div className="text-white/50 text-[10px] font-bold uppercase tracking-widest">Daily Goal</div>
-          <div className="text-white text-2xl font-black mt-0.5">
-            {xp} <span className="text-white/30 text-base font-medium">/ {goal} XP</span>
-          </div>
-          <div className={`text-xs mt-0.5 ${done ? "text-green-400 font-bold" : "text-white/40"}`}>
-            {done ? "✓ Goal reached!" : `${goal - xp} XP to go`}
-          </div>
+      {/* CTA */}
+      {nextLesson && (
+        <div className="px-4 pb-4">
+          <button className="w-full bg-green-500 hover:bg-green-400 active:scale-[0.98] text-white font-black py-3 rounded-2xl transition-all shadow-[0_0_20px_rgba(34,197,94,0.3)] text-sm">
+            Continue: {nextLesson.title} ▶
+          </button>
         </div>
-        <div className="relative ml-3">
-          <ProgressRing pct={pct} size={64} stroke={7} color={done ? "#22c55e" : "#a855f7"} />
-          <div className="absolute inset-0 flex items-center justify-center text-xs font-black text-white">
-            {Math.round(pct * 100)}%
-          </div>
-        </div>
-      </div>
-      <div className="mt-3 h-1.5 bg-white/10 rounded-full overflow-hidden">
-        <div className="h-full bg-gradient-to-r from-purple-500 to-violet-400 rounded-full transition-all duration-1000"
-          style={{ width: `${pct * 100}%` }} />
-      </div>
+      )}
     </div>
   );
 }
 
-function LeaderboardRow({ rank, name, xp, isYou }: { rank: number; name: string; xp: number; isYou?: boolean }) {
-  const medal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : null;
+function StatWidget({ icon, value, label, sub, color }: {
+  icon: string; value: string | number; label: string; sub?: string; color: string;
+}) {
   return (
-    <div className={`flex items-center gap-3 p-2.5 rounded-xl ${isYou ? "bg-purple-500/15 border border-purple-500/25" : "hover:bg-white/5"}`}>
-      <div className="w-6 text-center text-sm">
-        {medal ?? <span className="text-white/30 font-bold text-xs">{rank}</span>}
-      </div>
-      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-xs font-black text-white">
-        {name[0]}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className={`text-xs font-semibold truncate ${isYou ? "text-purple-300" : "text-white"}`}>{name}</div>
-        <div className="text-white/30 text-[10px]">{xp.toLocaleString()} XP</div>
+    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-3">
+      <div className={`w-11 h-11 rounded-xl ${color} flex items-center justify-center text-xl flex-shrink-0`}>{icon}</div>
+      <div>
+        <div className="text-white font-black text-xl leading-none">{value}</div>
+        <div className="text-white/50 text-xs mt-0.5">{label}</div>
+        {sub && <div className="text-white/30 text-[10px]">{sub}</div>}
       </div>
     </div>
   );
 }
 
-function AchievementBadge({ icon, name, desc, unlocked }: { icon: string; name: string; desc: string; unlocked: boolean }) {
-  return (
-    <div className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border text-center ${
-      unlocked ? "bg-yellow-500/10 border-yellow-500/25" : "bg-white/3 border-white/5 opacity-40"
-    }`}>
-      <div className={`text-2xl ${!unlocked ? "grayscale" : ""}`}>{icon}</div>
-      <div className={`text-[10px] font-bold ${unlocked ? "text-yellow-300" : "text-white/30"}`}>{name}</div>
-      <div className="text-white/30 text-[9px] leading-tight">{desc}</div>
-    </div>
-  );
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// ROOT PAGE
+// ─────────────────────────────────────────────────────────────────────────────
 
-// ── Main ─────────────────────────────────────────────────────────────────────
 export default function Home() {
   const [tab, setTab] = useState<Tab>("learn");
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
-  const streak = 7;
-  const dailyXp = 30;
+  const streak   = 7;
+  const dailyXp  = 30;
   const dailyGoal = 50;
-  const level = 4;
-  const totalXp = 340;
-  const nextLevelXp = 500;
+  const level    = 4;
+  const totalXp  = 340;
+  const nextLvlXp = 500;
+
+  const units = [
+    {
+      unit: 1, section: "Section 1", icon: "📝", progress: 40,
+      color: "bg-gradient-to-r from-green-700/80 to-emerald-700/80",
+      border: "border-green-500/25", glow: "shadow-[0_4px_24px_rgba(34,197,94,0.2)]",
+      lessons: [
+        { title: "Basic greetings",      type: "Vocabulary",   done: true  },
+        { title: "Say hello & goodbye",  type: "Speaking",     done: true  },
+        { title: "Introduce yourself",   type: "Conversation", active: true },
+        { title: "Ask simple questions", type: "Grammar",      locked: true },
+        { title: "Answer about yourself",type: "Listening",    locked: true },
+      ],
+    },
+    {
+      unit: 2, section: "Section 1", icon: "🔢", progress: 0,
+      color: "bg-gradient-to-r from-blue-700/80 to-indigo-700/80",
+      border: "border-blue-500/20", glow: "shadow-[0_4px_24px_rgba(59,130,246,0.15)]",
+      lessons: [
+        { title: "Numbers 1–10",  type: "Vocabulary", locked: true },
+        { title: "Tell the time", type: "Conversation", locked: true },
+        { title: "Dates & calendar", type: "Grammar", locked: true },
+        { title: "Count objects", type: "Practice",   locked: true },
+      ],
+    },
+    {
+      unit: 3, section: "Section 2", icon: "🍎", progress: 0,
+      color: "bg-gradient-to-r from-rose-700/80 to-pink-700/80",
+      border: "border-rose-500/20", glow: "shadow-[0_4px_24px_rgba(244,63,94,0.15)]",
+      lessons: [
+        { title: "Food & drinks",       type: "Vocabulary",   locked: true },
+        { title: "Order at restaurant", type: "Conversation", locked: true },
+        { title: "Express preferences", type: "Speaking",     locked: true },
+        { title: "Shopping vocab",      type: "Vocabulary",   locked: true },
+      ],
+    },
+  ];
 
   const leaderboard = [
     { name: "Sophia", xp: 4820 },
@@ -428,259 +356,461 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#0d0d1f] text-white">
 
-      {/* Ambient glow */}
+      {/* Ambient */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-purple-900/30 rounded-full blur-[120px]" />
-        <div className="absolute top-1/2 -right-32 w-80 h-80 bg-indigo-900/20 rounded-full blur-[100px]" />
-        <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-violet-900/20 rounded-full blur-[100px]" />
+        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-purple-900/25 rounded-full blur-[130px]" />
+        <div className="absolute top-1/2 -right-40 w-96 h-96 bg-indigo-900/20 rounded-full blur-[110px]" />
+        <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-violet-900/15 rounded-full blur-[100px]" />
       </div>
 
-      {/* ── Header ──────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 border-b border-white/5 bg-[#0d0d1f]/90 backdrop-blur-xl">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Owl size={26} />
-            <span className="font-black text-lg hidden sm:block">iLearn</span>
+      {/* ── DESKTOP LAYOUT (md+) ─────────────────────────────────────────── */}
+      <div className="hidden md:flex min-h-screen">
+
+        {/* Left sidebar nav */}
+        <aside className="w-56 xl:w-64 flex-shrink-0 sticky top-0 h-screen flex flex-col border-r border-white/5 bg-[#0b0b1a]/80 backdrop-blur-xl z-40">
+          <div className="p-5 border-b border-white/5">
+            <div className="flex items-center gap-2.5">
+              <Owl size={32} />
+              <span className="font-black text-xl">iLearn</span>
+            </div>
           </div>
-          <nav className="hidden md:flex items-center gap-1">
+
+          <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
             {navItems.map(n => (
               <button key={n.id} onClick={() => setTab(n.id)}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 ${
-                  tab === n.id ? "bg-white/10 text-white" : "text-white/40 hover:text-white/70"
-                }`}>
-                <span>{n.icon}</span><span>{n.label}</span>
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all text-left
+                  ${tab === n.id
+                    ? "bg-green-500/20 text-green-300 border border-green-500/25"
+                    : "text-white/40 hover:text-white/70 hover:bg-white/5"
+                  }`}>
+                <span className="text-xl">{n.icon}</span>
+                <span>{n.label}</span>
+                {tab === n.id && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-green-400" />}
               </button>
             ))}
           </nav>
-          <div className="flex items-center gap-1.5">
-            <div className="flex items-center gap-1 bg-orange-500/15 border border-orange-500/20 rounded-full px-2.5 py-1">
-              <span className="text-sm">🔥</span>
-              <span className="text-orange-400 text-xs font-black">{streak}</span>
-            </div>
-            <div className="flex items-center gap-1 bg-yellow-500/15 border border-yellow-500/20 rounded-full px-2.5 py-1">
-              <span className="text-sm">⭐</span>
-              <span className="text-yellow-400 text-xs font-black">{dailyXp}</span>
-            </div>
-            <div className="flex items-center gap-1 bg-blue-500/15 border border-blue-500/20 rounded-full px-2.5 py-1">
-              <span className="text-sm">💎</span>
-              <span className="text-blue-400 text-xs font-black">520</span>
+
+          {/* User mini profile */}
+          <div className="p-3 border-t border-white/5">
+            <div className="flex items-center gap-3 px-3 py-2.5 rounded-2xl bg-white/5">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-xs font-black">A</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-white text-xs font-bold truncate">Andriy</div>
+                <div className="text-white/30 text-[10px]">Level {level} · {totalXp} XP</div>
+              </div>
+              <div className="text-orange-400 text-xs font-black">{streak}🔥</div>
             </div>
           </div>
-        </div>
-      </header>
+        </aside>
 
-      {/* ── Main ────────────────────────────────────────────────────── */}
-      <main className="relative z-10 max-w-5xl mx-auto px-4 py-6 pb-28 md:pb-8">
+        {/* Main area */}
+        <div className="flex-1 min-w-0 flex flex-col">
 
-        {/* ══ LEARN ══════════════════════════════════════════════════ */}
-        {tab === "learn" && (
-          <div className="flex flex-col lg:flex-row gap-6">
-
-            {/* MAP COLUMN */}
-            <div className="flex-1 min-w-0">
-              {/* Continue CTA */}
-              <div className="flex items-center justify-between gap-4 bg-white/5 border border-white/10 rounded-2xl p-4 mb-6">
-                <div>
-                  <div className="text-white/50 text-sm">Good day, Andriy 👋</div>
-                  <div className="text-white font-black">Keep your streak alive!</div>
+          {/* Top bar */}
+          <header className="sticky top-0 z-30 border-b border-white/5 bg-[#0d0d1f]/90 backdrop-blur-xl px-6 h-14 flex items-center justify-between">
+            <div>
+              <h1 className="text-white font-black text-lg capitalize">{tab}</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              {[
+                { icon: "🔥", val: streak,   color: "bg-orange-500/15 border-orange-500/20 text-orange-400" },
+                { icon: "⭐", val: dailyXp,  color: "bg-yellow-500/15 border-yellow-500/20 text-yellow-400" },
+                { icon: "💎", val: 520,       color: "bg-blue-500/15 border-blue-500/20 text-blue-400"       },
+                { icon: "❤️", val: 5,         color: "bg-rose-500/15 border-rose-500/20 text-rose-400"       },
+              ].map((s, i) => (
+                <div key={i} className={`flex items-center gap-1 border rounded-full px-2.5 py-1 ${s.color}`}>
+                  <span className="text-sm">{s.icon}</span>
+                  <span className={`text-xs font-black`}>{s.val}</span>
                 </div>
-                <button className="bg-green-500 hover:bg-green-400 active:scale-95 text-white font-black px-5 py-2.5 rounded-xl shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-all text-sm whitespace-nowrap">
-                  Continue ▶
+              ))}
+            </div>
+          </header>
+
+          {/* Content */}
+          <main className="flex-1 overflow-y-auto">
+            <div className="max-w-6xl mx-auto px-6 py-6">
+
+              {/* ── LEARN ───────────────────────────────────────────── */}
+              {tab === "learn" && (
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+                  {/* Units */}
+                  <div className="xl:col-span-2 space-y-5">
+                    {/* Hero */}
+                    <div className="bg-gradient-to-r from-green-600/40 to-emerald-600/30 border border-green-500/25 rounded-3xl p-6 flex items-center justify-between gap-4">
+                      <div>
+                        <div className="text-white/60 text-sm">Good day, Andriy 👋</div>
+                        <div className="text-white text-2xl font-black mt-0.5">Keep your streak alive!</div>
+                        <div className="text-white/40 text-sm mt-1">
+                          <span className="text-yellow-400 font-bold">{dailyGoal - dailyXp} XP</span> left for today&apos;s goal
+                        </div>
+                      </div>
+                      <button className="flex-shrink-0 bg-green-500 hover:bg-green-400 active:scale-95 text-white font-black px-7 py-3.5 rounded-2xl shadow-[0_0_24px_rgba(34,197,94,0.4)] transition-all">
+                        Continue ▶
+                      </button>
+                    </div>
+
+                    {units.map(u => <UnitCard key={u.unit} {...u} />)}
+                  </div>
+
+                  {/* Sidebar */}
+                  <div className="space-y-4">
+                    {/* Daily goal */}
+                    <div className="bg-white/5 border border-white/10 rounded-3xl p-5">
+                      <div className="text-white/50 text-[10px] font-bold uppercase tracking-widest mb-3">Daily Goal</div>
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          <ProgressRing pct={dailyXp / dailyGoal} size={72} stroke={7} color="#a855f7" />
+                          <div className="absolute inset-0 flex items-center justify-center text-xs font-black text-white">
+                            {Math.round((dailyXp / dailyGoal) * 100)}%
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-white text-2xl font-black">{dailyXp} <span className="text-white/30 text-base font-medium">/ {dailyGoal}</span></div>
+                          <div className="text-white/40 text-xs">XP today</div>
+                          <div className="text-white/30 text-xs mt-0.5">{dailyGoal - dailyXp} XP to go</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <StatWidget icon="🔥" value={streak}   label="Day streak"  sub="Personal best: 14" color="bg-orange-500/20" />
+                      <StatWidget icon="⭐" value={totalXp}  label="Total XP"    sub={`Lvl ${level} → ${level+1}`} color="bg-yellow-500/20" />
+                      <StatWidget icon="📚" value={12}        label="Lessons done" sub="This week: 5" color="bg-green-500/20" />
+                      <StatWidget icon="🏆" value="#4"        label="Leaderboard" sub="Top 10%"      color="bg-purple-500/20" />
+                    </div>
+
+                    {/* Level */}
+                    <div className="bg-white/5 border border-white/10 rounded-3xl p-5">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="text-white font-black">Level {level} ⭐</div>
+                        <div className="text-white/30 text-xs">{totalXp}/{nextLvlXp} XP</div>
+                      </div>
+                      <XpBar current={totalXp} max={nextLvlXp} />
+                      <div className="text-white/30 text-xs mt-1.5">{nextLvlXp - totalXp} XP to Level {level+1}</div>
+                    </div>
+
+                    {/* Leaderboard mini */}
+                    <div className="bg-white/5 border border-white/10 rounded-3xl p-5">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="text-white font-bold text-sm">Leaderboard</div>
+                        <button onClick={() => setTab("leaderboard")} className="text-purple-400 text-xs hover:text-purple-300">See all →</button>
+                      </div>
+                      <div className="space-y-1">
+                        {leaderboard.slice(0, 5).map((r, i) => (
+                          <div key={i} className={`flex items-center gap-2.5 p-2 rounded-xl transition-all ${r.isYou ? "bg-purple-500/15 border border-purple-500/20" : "hover:bg-white/5"}`}>
+                            <div className="w-5 text-center text-xs">
+                              {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : <span className="text-white/30 font-bold">{i+1}</span>}
+                            </div>
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-[10px] font-black">{r.name[0]}</div>
+                            <div className="flex-1 text-xs font-semibold truncate">
+                              {r.name} {r.isYou && <span className="text-purple-400">(you)</span>}
+                            </div>
+                            <div className="text-white/30 text-[10px]">{r.xp.toLocaleString()}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Tip */}
+                    <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-4">
+                      <div className="text-indigo-300 text-[10px] font-bold uppercase tracking-widest mb-1">💡 Tip</div>
+                      <div className="text-white/60 text-xs leading-relaxed">10 min daily beats 2 hours once a week. Consistency is everything!</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── PRACTICE ─────────────────────────────────────────── */}
+              {tab === "practice" && (
+                <div className="max-w-3xl">
+                  <div className="mb-6">
+                    <div className="text-2xl font-black">Practice Mode ⚔️</div>
+                    <div className="text-white/40 mt-1">Sharpen your skills anytime</div>
+                  </div>
+                  <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
+                    {[
+                      { icon: "🗣️", title: "Speaking",    desc: "AI pronunciation feedback",   color: "from-violet-600/30 to-violet-800/20", border: "border-violet-500/20", xp: 15 },
+                      { icon: "👂", title: "Listening",   desc: "Train with native audio",      color: "from-blue-600/30 to-blue-800/20",   border: "border-blue-500/20",   xp: 10 },
+                      { icon: "✍️", title: "Writing",     desc: "Build sentences from memory",  color: "from-emerald-600/30 to-emerald-800/20", border: "border-emerald-500/20", xp: 12 },
+                      { icon: "🃏", title: "Flashcards",  desc: "Spaced repetition vocab",      color: "from-rose-600/30 to-rose-800/20",   border: "border-rose-500/20",   xp:  8 },
+                      { icon: "⚡", title: "Speed Round", desc: "20 questions, 60 seconds",     color: "from-yellow-600/30 to-yellow-800/20", border: "border-yellow-500/20", xp: 20 },
+                      { icon: "🤖", title: "AI Chat",     desc: "Chat with AI partner",         color: "from-cyan-600/30 to-cyan-800/20",   border: "border-cyan-500/20",   xp: 25 },
+                    ].map((m, i) => (
+                      <button key={i} className={`flex flex-col gap-4 p-5 rounded-2xl bg-gradient-to-br ${m.color} border ${m.border} hover:brightness-110 active:scale-[0.98] transition-all text-left`}>
+                        <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-2xl">{m.icon}</div>
+                        <div>
+                          <div className="text-white font-black">{m.title}</div>
+                          <div className="text-white/50 text-sm mt-0.5">{m.desc}</div>
+                        </div>
+                        <div className="mt-auto">
+                          <span className="text-yellow-400 font-black text-sm">+{m.xp} XP</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── LEADERBOARD ───────────────────────────────────────── */}
+              {tab === "leaderboard" && (
+                <div className="max-w-2xl">
+                  <div className="mb-6">
+                    <div className="text-2xl font-black">Weekly Rankings 🏆</div>
+                    <div className="text-white/40 mt-1">Resets Monday · Top 3 get bonus 💎</div>
+                  </div>
+                  {/* Podium */}
+                  <div className="flex items-end justify-center gap-4 mb-6">
+                    {[leaderboard[1], leaderboard[0], leaderboard[2]].map((r, i) => {
+                      const h = ["h-24", "h-32", "h-20"];
+                      const c = ["bg-gray-500/20 border-gray-400/20", "bg-yellow-500/20 border-yellow-400/30", "bg-orange-500/15 border-orange-400/20"];
+                      const m = ["🥈","🥇","🥉"];
+                      return (
+                        <div key={i} className={`flex-1 flex flex-col items-center gap-2 ${h[i]} rounded-2xl border ${c[i]} justify-end pb-4`}>
+                          <span className="text-2xl">{m[i]}</span>
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center font-bold">{r.name[0]}</div>
+                          <div className="text-white text-sm font-bold">{r.name}</div>
+                          <div className="text-white/40 text-xs">{r.xp.toLocaleString()} XP</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden">
+                    {leaderboard.map((r, i) => (
+                      <div key={i} className={`flex items-center gap-3 px-5 py-3.5 border-b border-white/5 last:border-0 transition-all
+                        ${r.isYou ? "bg-purple-500/15" : "hover:bg-white/5"}`}>
+                        <div className="w-6 text-center">{i===0?"🥇":i===1?"🥈":i===2?"🥉":<span className="text-white/30 text-sm font-bold">{i+1}</span>}</div>
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center font-bold">{r.name[0]}</div>
+                        <div className="flex-1">
+                          <div className={`font-semibold text-sm ${r.isYou ? "text-purple-300" : "text-white"}`}>
+                            {r.name} {r.isYou && <span className="text-xs bg-purple-500/30 text-purple-300 px-1.5 py-0.5 rounded-full ml-1">You</span>}
+                          </div>
+                          <div className="text-white/30 text-xs">{r.xp.toLocaleString()} XP this week</div>
+                        </div>
+                        <div className="w-28 hidden sm:block">
+                          <XpBar current={r.xp} max={5000} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── PROFILE ───────────────────────────────────────────── */}
+              {tab === "profile" && (
+                <div className="max-w-2xl space-y-5">
+                  <div className="bg-gradient-to-br from-purple-600/30 to-indigo-600/20 border border-purple-500/25 rounded-3xl p-6 flex items-center gap-5">
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-3xl font-black flex-shrink-0 shadow-[0_0_30px_rgba(139,92,246,0.5)]">A</div>
+                    <div>
+                      <div className="text-white text-2xl font-black">Andriy</div>
+                      <div className="text-white/40 text-sm">Joined March 2026</div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="bg-purple-500/30 text-purple-300 text-xs font-bold px-3 py-1 rounded-full">🇺🇦 Ukrainian</span>
+                        <span className="bg-blue-500/30 text-blue-300 text-xs font-bold px-3 py-1 rounded-full">🇬🇧 English</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-3">
+                    {[
+                      { icon:"🔥", val: streak,  label:"Streak",  color:"text-orange-400" },
+                      { icon:"⭐", val: totalXp, label:"Total XP", color:"text-yellow-400" },
+                      { icon:"📚", val: 12,       label:"Lessons", color:"text-green-400"  },
+                      { icon:"🏆", val: "#4",     label:"Rank",    color:"text-purple-400" },
+                    ].map((s,i) => (
+                      <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col items-center gap-1">
+                        <span className="text-2xl">{s.icon}</span>
+                        <span className={`text-xl font-black ${s.color}`}>{s.val}</span>
+                        <span className="text-white/40 text-xs">{s.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-3xl p-5">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-white font-black">Level {level} ⭐</div>
+                      <div className="text-white/30 text-xs">{totalXp}/{nextLvlXp} XP</div>
+                    </div>
+                    <XpBar current={totalXp} max={nextLvlXp} />
+                    <div className="text-white/30 text-xs mt-1.5">{nextLvlXp - totalXp} XP to Level {level+1}</div>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-3xl p-5">
+                    <h3 className="text-white font-bold mb-4">Achievements</h3>
+                    <div className="grid grid-cols-6 gap-3">
+                      {[
+                        { icon:"🔥", name:"On Fire",      desc:"7-day streak",      unlocked:true  },
+                        { icon:"⚡", name:"Quick Start",  desc:"First lesson done", unlocked:true  },
+                        { icon:"🌙", name:"Night Owl",    desc:"Learn after 10pm",  unlocked:true  },
+                        { icon:"💎", name:"Gem Collector",desc:"Earn 500 gems",     unlocked:false },
+                        { icon:"🏆", name:"Champion",     desc:"Top 3 leaderboard", unlocked:false },
+                        { icon:"🎯", name:"Sharp",        desc:"100% accuracy",     unlocked:false },
+                      ].map((a,i) => (
+                        <div key={i} className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border text-center ${a.unlocked ? "bg-yellow-500/10 border-yellow-500/25" : "bg-white/3 border-white/5 opacity-40"}`}>
+                          <div className={`text-2xl ${!a.unlocked?"grayscale":""}`}>{a.icon}</div>
+                          <div className={`text-[10px] font-bold ${a.unlocked?"text-yellow-300":"text-white/30"}`}>{a.name}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </main>
+        </div>
+      </div>
+
+      {/* ── MOBILE LAYOUT (< md) ──────────────────────────────────────────── */}
+      <div className="md:hidden flex flex-col min-h-screen">
+
+        {/* Mobile header */}
+        <header className="sticky top-0 z-50 border-b border-white/5 bg-[#0d0d1f]/95 backdrop-blur-xl px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Owl size={24} />
+            <span className="font-black text-base">iLearn</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1 bg-orange-500/15 border border-orange-500/20 rounded-full px-2 py-0.5">
+              <span className="text-sm">🔥</span><span className="text-orange-400 text-xs font-black">{streak}</span>
+            </div>
+            <div className="flex items-center gap-1 bg-yellow-500/15 border border-yellow-500/20 rounded-full px-2 py-0.5">
+              <span className="text-sm">⭐</span><span className="text-yellow-400 text-xs font-black">{dailyXp}</span>
+            </div>
+            <div className="flex items-center gap-1 bg-blue-500/15 border border-blue-500/20 rounded-full px-2 py-0.5">
+              <span className="text-sm">💎</span><span className="text-blue-400 text-xs font-black">520</span>
+            </div>
+          </div>
+        </header>
+
+        {/* Mobile content */}
+        <main className="flex-1 overflow-y-auto pb-24">
+
+          {/* LEARN — map */}
+          {tab === "learn" && (
+            <div className="px-4 py-4 space-y-4">
+              {/* Continue banner */}
+              <div className="flex items-center justify-between gap-3 bg-green-500/15 border border-green-500/25 rounded-2xl px-4 py-3">
+                <div>
+                  <div className="text-white font-black text-sm">Introduce yourself 🗣️</div>
+                  <div className="text-white/40 text-xs">{dailyGoal - dailyXp} XP left today</div>
+                </div>
+                <button className="bg-green-500 text-white font-black px-4 py-2 rounded-xl text-sm shadow-[0_0_16px_rgba(34,197,94,0.4)] active:scale-95 transition-all whitespace-nowrap">
+                  Go ▶
                 </button>
               </div>
 
-              {/* Map scroll area */}
-              <div className="overflow-y-auto">
-                <LearningMap />
-              </div>
-            </div>
-
-            {/* SIDEBAR */}
-            <div className="w-full lg:w-72 xl:w-80 flex-shrink-0 space-y-4">
-              <StreakCard streak={streak} />
-              <DailyGoalCard xp={dailyXp} goal={dailyGoal} />
-
-              {/* Level */}
-              <div className="bg-white/5 border border-white/10 rounded-3xl p-5">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <div className="text-white/50 text-[10px] font-bold uppercase tracking-widest">Level</div>
-                    <div className="text-white text-2xl font-black">{level} <span className="text-yellow-400">⭐</span></div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-white/30 text-xs">{totalXp} / {nextLevelXp} XP</div>
-                    <div className="text-white/40 text-xs">to level {level + 1}</div>
+              {/* Daily progress */}
+              <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
+                <div className="relative">
+                  <ProgressRing pct={dailyXp / dailyGoal} size={44} stroke={5} color="#a855f7" />
+                  <div className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-white">
+                    {Math.round((dailyXp / dailyGoal) * 100)}%
                   </div>
                 </div>
-                <XpBar current={totalXp} max={nextLevelXp} />
-              </div>
-
-              {/* Leaderboard */}
-              <div className="bg-white/5 border border-white/10 rounded-3xl p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-white font-bold text-sm">Leaderboard</h3>
-                  <button onClick={() => setTab("leaderboard")} className="text-purple-400 text-xs hover:text-purple-300">See all →</button>
-                </div>
-                <div className="space-y-0.5">
-                  {leaderboard.slice(0, 4).map((r, i) => <LeaderboardRow key={i} rank={i+1} {...r} />)}
-                </div>
-              </div>
-
-              {/* Tip */}
-              <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-4">
-                <div className="text-indigo-300 text-[10px] font-bold uppercase tracking-widest mb-1">💡 Tip of the day</div>
-                <div className="text-white/60 text-xs leading-relaxed">
-                  10 minutes daily beats 2 hours once a week. Consistency is everything!
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ══ PRACTICE ═══════════════════════════════════════════════ */}
-        {tab === "practice" && (
-          <div className="max-w-2xl mx-auto space-y-4">
-            <div className="text-center py-4">
-              <div className="text-2xl font-black">Practice Mode ⚔️</div>
-              <div className="text-white/40 text-sm mt-1">Sharpen your skills anytime</div>
-            </div>
-            {[
-              { icon: "🗣️", title: "Speaking",      desc: "Pronunciation with AI feedback",  color: "from-violet-600/30 to-violet-800/20", border: "border-violet-500/25", xp: 15 },
-              { icon: "👂", title: "Listening",     desc: "Train your ear with native audio",  color: "from-blue-600/30 to-blue-800/20",   border: "border-blue-500/25",   xp: 10 },
-              { icon: "✍️", title: "Writing",       desc: "Build sentences from memory",       color: "from-emerald-600/30 to-emerald-800/20", border: "border-emerald-500/25", xp: 12 },
-              { icon: "🃏", title: "Flashcards",    desc: "Spaced repetition vocabulary",      color: "from-rose-600/30 to-rose-800/20",   border: "border-rose-500/25",   xp:  8 },
-              { icon: "⚡", title: "Speed Round",   desc: "20 questions in 60 seconds",         color: "from-yellow-600/30 to-yellow-800/20", border: "border-yellow-500/25", xp: 20 },
-              { icon: "🤖", title: "AI Chat",       desc: "Conversation with AI partner",       color: "from-cyan-600/30 to-cyan-800/20",   border: "border-cyan-500/25",   xp: 25 },
-            ].map((m, i) => (
-              <button key={i} className={`w-full flex items-center gap-4 p-5 rounded-2xl bg-gradient-to-r ${m.color} border ${m.border} hover:brightness-110 active:scale-[0.98] transition-all text-left`}>
-                <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-2xl flex-shrink-0">{m.icon}</div>
                 <div className="flex-1">
-                  <div className="text-white font-black">{m.title}</div>
-                  <div className="text-white/50 text-sm mt-0.5">{m.desc}</div>
+                  <div className="text-white text-sm font-bold">Daily goal: {dailyXp}/{dailyGoal} XP</div>
+                  <XpBar current={dailyXp} max={dailyGoal} color="from-purple-500 to-violet-400" />
                 </div>
-                <div className="text-right flex-shrink-0">
-                  <div className="text-yellow-400 font-black text-sm">+{m.xp}</div>
-                  <div className="text-white/30 text-xs">XP</div>
+              </div>
+
+              {/* The map */}
+              <MobileMap />
+            </div>
+          )}
+
+          {/* PRACTICE */}
+          {tab === "practice" && (
+            <div className="px-4 py-4 space-y-3">
+              <div className="text-xl font-black pt-2 pb-1">Practice ⚔️</div>
+              {[
+                { icon:"🗣️", title:"Speaking",    desc:"AI feedback",       color:"from-violet-600/30 to-violet-800/20", border:"border-violet-500/20", xp:15 },
+                { icon:"👂", title:"Listening",   desc:"Native audio",      color:"from-blue-600/30 to-blue-800/20",   border:"border-blue-500/20",   xp:10 },
+                { icon:"✍️", title:"Writing",     desc:"Sentences from memory", color:"from-emerald-600/30 to-emerald-800/20", border:"border-emerald-500/20", xp:12 },
+                { icon:"🃏", title:"Flashcards",  desc:"Spaced repetition", color:"from-rose-600/30 to-rose-800/20",   border:"border-rose-500/20",   xp: 8 },
+                { icon:"⚡", title:"Speed Round", desc:"60 seconds",        color:"from-yellow-600/30 to-yellow-800/20", border:"border-yellow-500/20", xp:20 },
+                { icon:"🤖", title:"AI Chat",     desc:"AI conversation",   color:"from-cyan-600/30 to-cyan-800/20",   border:"border-cyan-500/20",   xp:25 },
+              ].map((m,i) => (
+                <button key={i} className={`w-full flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r ${m.color} border ${m.border} active:scale-[0.98] transition-all text-left`}>
+                  <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-xl flex-shrink-0">{m.icon}</div>
+                  <div className="flex-1">
+                    <div className="text-white font-black text-sm">{m.title}</div>
+                    <div className="text-white/50 text-xs">{m.desc}</div>
+                  </div>
+                  <div className="text-yellow-400 font-black text-sm flex-shrink-0">+{m.xp}</div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* LEADERBOARD */}
+          {tab === "leaderboard" && (
+            <div className="px-4 py-4 space-y-3">
+              <div className="text-xl font-black pt-2 pb-1">Rankings 🏆</div>
+              <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden">
+                {leaderboard.map((r,i) => (
+                  <div key={i} className={`flex items-center gap-3 px-4 py-3.5 border-b border-white/5 last:border-0 ${r.isYou?"bg-purple-500/15":""}`}>
+                    <div className="w-6 text-center text-sm">{i===0?"🥇":i===1?"🥈":i===2?"🥉":<span className="text-white/30 font-bold text-xs">{i+1}</span>}</div>
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-xs font-bold">{r.name[0]}</div>
+                    <div className="flex-1">
+                      <div className={`text-sm font-semibold ${r.isYou?"text-purple-300":"text-white"}`}>
+                        {r.name} {r.isYou&&<span className="text-[10px] text-purple-400">(you)</span>}
+                      </div>
+                      <div className="text-white/30 text-xs">{r.xp.toLocaleString()} XP</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* PROFILE */}
+          {tab === "profile" && (
+            <div className="px-4 py-4 space-y-4">
+              <div className="bg-gradient-to-br from-purple-600/30 to-indigo-600/20 border border-purple-500/25 rounded-3xl p-5 text-center">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-2xl font-black mx-auto">A</div>
+                <div className="text-white text-lg font-black mt-2">Andriy</div>
+                <div className="text-white/40 text-xs">Joined March 2026</div>
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { icon:"🔥", val:streak,  label:"Streak",  color:"text-orange-400" },
+                  { icon:"⭐", val:totalXp, label:"XP",      color:"text-yellow-400" },
+                  { icon:"📚", val:12,       label:"Lessons", color:"text-green-400"  },
+                  { icon:"🏆", val:"#4",     label:"Rank",    color:"text-purple-400" },
+                ].map((s,i) => (
+                  <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-3 flex flex-col items-center gap-1">
+                    <span className="text-lg">{s.icon}</span>
+                    <span className={`text-base font-black ${s.color}`}>{s.val}</span>
+                    <span className="text-white/40 text-[10px]">{s.label}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                <div className="flex justify-between text-xs mb-1.5">
+                  <span className="text-white font-bold">Level {level}</span>
+                  <span className="text-white/30">{totalXp}/{nextLvlXp} XP</span>
                 </div>
+                <XpBar current={totalXp} max={nextLvlXp} />
+              </div>
+            </div>
+          )}
+        </main>
+
+        {/* Mobile bottom nav */}
+        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/5 bg-[#0d0d1f]/95 backdrop-blur-xl">
+          <div className="flex items-center justify-around px-2 pt-2 pb-6">
+            {navItems.map(n => (
+              <button key={n.id} onClick={() => setTab(n.id)}
+                className="flex flex-col items-center gap-1 px-3 py-1 transition-all active:scale-90">
+                <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl transition-all
+                  ${tab === n.id ? "bg-green-500/20 shadow-[0_0_12px_rgba(34,197,94,0.3)]" : ""}`}>
+                  {n.icon}
+                </div>
+                <span className={`text-[10px] font-semibold ${tab === n.id ? "text-green-400" : "text-white/30"}`}>{n.label}</span>
               </button>
             ))}
           </div>
-        )}
-
-        {/* ══ LEADERBOARD ════════════════════════════════════════════ */}
-        {tab === "leaderboard" && (
-          <div className="max-w-xl mx-auto space-y-4">
-            <div className="text-center py-4">
-              <div className="text-2xl font-black">Weekly Rankings 🏆</div>
-              <div className="text-white/40 text-sm mt-1">Resets Monday · Top 3 get bonus 💎</div>
-            </div>
-            <div className="flex items-end justify-center gap-3 pb-2">
-              {[leaderboard[1], leaderboard[0], leaderboard[2]].map((r, i) => {
-                const h = ["h-20", "h-28", "h-16"];
-                const c = ["bg-gray-500/20 border-gray-400/20", "bg-yellow-500/20 border-yellow-400/30", "bg-orange-500/15 border-orange-400/20"];
-                const m = ["🥈","🥇","🥉"];
-                return (
-                  <div key={i} className={`flex-1 flex flex-col items-center gap-2 ${h[i]} rounded-2xl border ${c[i]} justify-end pb-3`}>
-                    <div className="text-lg">{m[i]}</div>
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-sm font-bold">{r.name[0]}</div>
-                    <div className="text-white text-xs font-bold">{r.name}</div>
-                    <div className="text-white/40 text-[10px]">{r.xp.toLocaleString()} XP</div>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-4 space-y-1">
-              {leaderboard.map((r, i) => (
-                <LeaderboardRow key={i} rank={i+1} name={r.name} xp={r.xp} isYou={(r as any).isYou} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ══ PROFILE ════════════════════════════════════════════════ */}
-        {tab === "profile" && (
-          <div className="max-w-xl mx-auto space-y-4">
-            <div className="bg-gradient-to-br from-purple-600/30 to-indigo-600/20 border border-purple-500/30 rounded-3xl p-6 text-center">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-3xl font-black mx-auto shadow-[0_0_30px_rgba(139,92,246,0.5)]">A</div>
-              <div className="text-white text-xl font-black mt-3">Andriy</div>
-              <div className="text-white/40 text-sm">Joined March 2026</div>
-              <div className="flex items-center justify-center gap-2 mt-3">
-                <span className="bg-purple-500/30 text-purple-300 text-xs font-bold px-3 py-1 rounded-full">🇺🇦 Ukrainian</span>
-                <span className="bg-blue-500/30 text-blue-300 text-xs font-bold px-3 py-1 rounded-full">🇬🇧 English</span>
-              </div>
-            </div>
-            <div className="grid grid-cols-4 gap-3">
-              {[
-                { icon: "🔥", val: streak,   label: "Streak",  color: "text-orange-400" },
-                { icon: "⭐", val: totalXp,  label: "Total XP", color: "text-yellow-400" },
-                { icon: "📚", val: 12,        label: "Lessons", color: "text-green-400" },
-                { icon: "🏆", val: 4,         label: "Rank",    color: "text-purple-400" },
-              ].map((s, i) => (
-                <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-3 flex flex-col items-center gap-1">
-                  <span className="text-xl">{s.icon}</span>
-                  <span className={`text-lg font-black ${s.color}`}>{s.val}</span>
-                  <span className="text-white/40 text-[10px] text-center">{s.label}</span>
-                </div>
-              ))}
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-5">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <div className="text-white/50 text-[10px] uppercase tracking-widest">Level {level}</div>
-                  <div className="text-white text-xl font-black">{totalXp} / {nextLevelXp} XP ⭐</div>
-                </div>
-              </div>
-              <XpBar current={totalXp} max={nextLevelXp} />
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-5">
-              <h3 className="text-white font-bold mb-4">Achievements</h3>
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { icon: "🔥", name: "On Fire",      desc: "7-day streak",      unlocked: true  },
-                  { icon: "⚡", name: "Quick Start",  desc: "First lesson done", unlocked: true  },
-                  { icon: "🌙", name: "Night Owl",    desc: "Learn after 10pm",  unlocked: true  },
-                  { icon: "💎", name: "Gem Collector", desc: "Earn 500 gems",    unlocked: false },
-                  { icon: "🏆", name: "Champion",     desc: "Top 3 leaderboard", unlocked: false },
-                  { icon: "🎯", name: "Sharp Shooter", desc: "100% accuracy",    unlocked: false },
-                ].map((a, i) => <AchievementBadge key={i} {...a} />)}
-              </div>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden">
-              {[
-                { icon: "🎯", label: "Daily goal",  val: `${dailyGoal} XP` },
-                { icon: "🔔", label: "Reminders",   val: "8:00 PM" },
-                { icon: "🌍", label: "Language",    val: "English" },
-              ].map((s, i) => (
-                <button key={i} className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/5 transition-all border-b border-white/5 last:border-0">
-                  <div className="flex items-center gap-3">
-                    <span>{s.icon}</span>
-                    <span className="text-white/70 text-sm">{s.label}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-white/40 text-sm">{s.val}</span>
-                    <span className="text-white/20">›</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* ── Mobile bottom nav ────────────────────────────────────────── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-white/5 bg-[#0d0d1f]/95 backdrop-blur-xl">
-        <div className="flex items-center justify-around px-2 py-2 pb-6">
-          {navItems.map(n => (
-            <button key={n.id} onClick={() => setTab(n.id)}
-              className="flex flex-col items-center gap-1 px-3 py-1 transition-all active:scale-90">
-              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl transition-all ${
-                tab === n.id ? "bg-white/15 shadow-[0_0_12px_rgba(139,92,246,0.3)]" : ""
-              }`}>{n.icon}</div>
-              <span className={`text-[10px] font-semibold ${tab === n.id ? "text-white" : "text-white/30"}`}>{n.label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+        </nav>
+      </div>
     </div>
   );
 }

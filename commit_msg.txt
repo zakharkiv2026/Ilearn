@@ -1,1 +1,1 @@
-fix: per-user lesson state, stale JWT logout, leaderboard dedup
+fix: redirect to login on logout

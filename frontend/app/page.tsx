@@ -482,7 +482,7 @@ export default function Home() {
     } catch { /* ignore */ } finally { setAuthLoading(false); }
   }
 
-  function logout() { clearToken(); setUser(null); setStats(null); }
+  function logout() { clearToken(); window.location.href = "/login"; }
 
   // Fetch units + their lessons from API
   useEffect(() => {

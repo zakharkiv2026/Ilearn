@@ -235,34 +235,83 @@ app.MapGet("/api/sections", async (AppDbContext db) =>
         .Select(s => new { s.Id, s.Name, s.Order })
         .ToListAsync());
 
+// ── Per-user lesson state helper ──────────────────────────────────────────────
+
+// Returns set of lessonIds completed by the given user
+async Task<HashSet<int>> GetUserDoneIds(int? userId, AppDbContext db)
+{
+    if (userId is null) return [];
+    var ids = await db.UserLessons
+        .Where(ul => ul.UserId == userId)
+        .Select(ul => ul.LessonId)
+        .ToListAsync();
+    return [..ids];
+}
+
+// Compute per-user isDone/isActive/isLocked for an ordered list of lessons
+List<object> ComputeLessonStates(IEnumerable<Lesson> orderedLessons, HashSet<int> doneIds)
+{
+    var list = orderedLessons.OrderBy(l => l.Order).ToList();
+    var result = new List<object>();
+    for (int i = 0; i < list.Count; i++)
+    {
+        var l = list[i];
+        bool isDone   = doneIds.Contains(l.Id);
+        bool isActive = !isDone && (i == 0 || doneIds.Contains(list[i - 1].Id));
+        bool isLocked = !isDone && !isActive;
+        result.Add(new { l.Id, l.Title, l.Type, l.Order, IsDone = isDone, IsActive = isActive, IsLocked = isLocked, l.XpReward });
+    }
+    return result;
+}
+
 // ── Units ─────────────────────────────────────────────────────────────────────
 
-app.MapGet("/api/units", async (AppDbContext db) =>
-    await db.Units
-        .OrderBy(u => u.SectionId).ThenBy(u => u.Order)
-        .Select(u => new
-        {
-            u.Id, u.SectionId, u.Title, u.Icon, u.ImageUrl, u.Color, u.Order, u.Progress,
-            SectionName = u.Section!.Name,
-            LessonCount = u.Lessons.Count
-        })
-        .ToListAsync());
+app.MapGet("/api/units", async (HttpContext ctx, AppDbContext db) =>
+{
+    var userId  = GetUserId(ctx);
+    var doneIds = await GetUserDoneIds(userId, db);
 
-app.MapGet("/api/units/{id}", async (int id, AppDbContext db) =>
+    var units = await db.Units
+        .Include(u => u.Lessons)
+        .Include(u => u.Section)
+        .OrderBy(u => u.SectionId).ThenBy(u => u.Order)
+        .ToListAsync();
+
+    return Results.Ok(units.Select(u =>
+    {
+        var lessons = u.Lessons.OrderBy(l => l.Order).ToList();
+        int done    = lessons.Count(l => doneIds.Contains(l.Id));
+        int pct     = lessons.Count > 0 ? (int)Math.Round(done * 100.0 / lessons.Count) : 0;
+        return new
+        {
+            u.Id, u.SectionId, u.Title, u.Icon, u.ImageUrl, u.Color, u.Order,
+            Progress    = pct,
+            SectionName = u.Section!.Name,
+            LessonCount = lessons.Count,
+        };
+    }));
+});
+
+app.MapGet("/api/units/{id}", async (int id, HttpContext ctx, AppDbContext db) =>
 {
     var unit = await db.Units
         .Include(u => u.Lessons.OrderBy(l => l.Order))
         .Include(u => u.Section)
         .FirstOrDefaultAsync(u => u.Id == id);
-    return unit is null ? Results.NotFound() : Results.Ok(new
+    if (unit is null) return Results.NotFound();
+
+    var userId  = GetUserId(ctx);
+    var doneIds = await GetUserDoneIds(userId, db);
+    var lessons = ComputeLessonStates(unit.Lessons, doneIds);
+    int done    = unit.Lessons.Count(l => doneIds.Contains(l.Id));
+    int pct     = unit.Lessons.Count > 0 ? (int)Math.Round(done * 100.0 / unit.Lessons.Count) : 0;
+
+    return Results.Ok(new
     {
         unit.Id, unit.SectionId, unit.Title, unit.Icon, unit.ImageUrl,
-        unit.Color, unit.Order, unit.Progress,
+        unit.Color, unit.Order, Progress = pct,
         SectionName = unit.Section!.Name,
-        Lessons = unit.Lessons.Select(l => new
-        {
-            l.Id, l.Title, l.Type, l.Order, l.IsLocked, l.IsDone, l.IsActive, l.XpReward
-        })
+        Lessons = lessons
     });
 });
 
@@ -279,24 +328,20 @@ app.MapPatch("/api/lessons/{id}/complete", async (int id, HttpContext ctx, AppDb
     var lesson = await db.Lessons.FindAsync(id);
     if (lesson is null) return Results.NotFound();
 
-    // Track per-user progress if logged in
     var userId = GetUserId(ctx);
     if (userId is not null)
     {
+        var userExists = await db.Users.AnyAsync(u => u.Id == userId);
+        if (!userExists) return Results.Unauthorized();
+
         var already = await db.UserLessons.AnyAsync(ul => ul.UserId == userId && ul.LessonId == id);
         if (!already)
         {
             db.UserLessons.Add(new UserLesson { UserId = userId.Value, LessonId = id });
+            await db.SaveChangesAsync();
         }
     }
 
-    lesson.IsDone = true;
-    lesson.IsActive = false;
-    var next = await db.Lessons
-        .Where(l => l.UnitId == lesson.UnitId && l.Order == lesson.Order + 1)
-        .FirstOrDefaultAsync();
-    if (next is not null) { next.IsLocked = false; next.IsActive = true; }
-    await db.SaveChangesAsync();
     return Results.Ok(new { success = true });
 });
 
@@ -320,6 +365,41 @@ app.MapGet("/api/lessons/{id}/content", async (int id, AppDbContext db) =>
         .ToListAsync();
 
     return Results.Ok(new { lesson = new { lesson.Id, lesson.Title, lesson.Type, lesson.XpReward }, words, exercises });
+});
+
+// ── Debug ─────────────────────────────────────────────────────────────────────
+
+app.MapGet("/api/admin/users", async (AppDbContext db) =>
+    await db.Users.Select(u => new { u.Id, u.Name, u.Email, u.GoogleId }).ToListAsync());
+
+app.MapGet("/api/admin/userlessons", async (AppDbContext db) =>
+    await db.UserLessons.Select(ul => new { ul.Id, ul.UserId, ul.LessonId, ul.CompletedAt }).ToListAsync());
+
+app.MapDelete("/api/admin/users/{id}", async (int id, AppDbContext db) =>
+{
+    var user = await db.Users.FindAsync(id);
+    if (user is null) return Results.NotFound();
+    db.Users.Remove(user);
+    db.UserLessons.RemoveRange(db.UserLessons.Where(ul => ul.UserId == id));
+    await db.SaveChangesAsync();
+    return Results.Ok(new { deleted = id });
+});
+
+app.MapPost("/api/admin/reset-lessons", async (AppDbContext db) =>
+{
+    var units = await db.Units.Include(u => u.Lessons).ToListAsync();
+    foreach (var unit in units)
+    {
+        var lessons = unit.Lessons.OrderBy(l => l.Order).ToList();
+        for (int i = 0; i < lessons.Count; i++)
+        {
+            lessons[i].IsDone   = false;
+            lessons[i].IsActive = i == 0;
+            lessons[i].IsLocked = i > 0;
+        }
+    }
+    await db.SaveChangesAsync();
+    return Results.Ok(new { reset = true });
 });
 
 // ── Stats (admin) ─────────────────────────────────────────────────────────────

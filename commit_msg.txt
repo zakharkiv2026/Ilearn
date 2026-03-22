@@ -1,1 +1,1 @@
-style: green scrollbar matching site theme
+fix: per-user lesson state, stale JWT logout, leaderboard dedup

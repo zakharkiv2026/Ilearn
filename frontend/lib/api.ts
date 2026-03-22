@@ -132,7 +132,10 @@ function themeFromColor(color: string) {
 // ── API calls ─────────────────────────────────────────────────────────────────
 
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`);
+  const token = getToken();
+  const res = await fetch(`${BASE_URL}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
   if (!res.ok) throw new Error(`API error ${res.status}: ${path}`);
   return res.json();
 }
@@ -188,10 +191,15 @@ export async function getLessonContent(id: number): Promise<ApiLessonContent | n
 
 export async function completeLessonAuth(id: number): Promise<void> {
   const token = getToken();
-  await fetch(`${BASE_URL}/api/lessons/${id}/complete`, {
+  const res = await fetch(`${BASE_URL}/api/lessons/${id}/complete`, {
     method: "PATCH",
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
+  if (res.status === 401) {
+    // Token is stale (user deleted) — force re-login
+    clearToken();
+    window.location.href = "/login";
+  }
 }
 
 export function mapUnitToCard(u: ApiUnit) {

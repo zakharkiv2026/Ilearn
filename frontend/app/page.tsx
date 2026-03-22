@@ -609,7 +609,7 @@ export default function Home() {
 
               {/* ── PRACTICE ─────────────────────────────────────────── */}
               {tab === "practice" && (
-                <div className="max-w-3xl">
+                <div className="max-w-3xl mx-auto">
                   <div className="mb-6">
                     <div className="text-2xl font-black">Режим практики ⚔️</div>
                     <div className="text-white/40 mt-1">Вдосконалюй навички будь-коли</div>
@@ -640,7 +640,7 @@ export default function Home() {
 
               {/* ── LEADERBOARD ───────────────────────────────────────── */}
               {tab === "leaderboard" && (
-                <div className="max-w-2xl">
+                <div className="max-w-2xl mx-auto">
                   <div className="mb-6">
                     <div className="text-2xl font-black">Тижневий рейтинг 🏆</div>
                     <div className="text-white/40 mt-1">Скидається в понеділок · Топ-3 отримують бонус 💎</div>
@@ -684,7 +684,7 @@ export default function Home() {
 
               {/* ── PROFILE ───────────────────────────────────────────── */}
               {tab === "profile" && (
-                <div className="max-w-2xl space-y-5">
+                <div className="max-w-2xl mx-auto space-y-5">
                   <div className="bg-gradient-to-br from-purple-600/30 to-indigo-600/20 border border-purple-500/25 rounded-3xl p-6 flex items-center gap-5">
                     <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-3xl font-black flex-shrink-0 shadow-[0_0_30px_rgba(139,92,246,0.5)]">A</div>
                     <div>
